@@ -37,7 +37,11 @@ Read in this order:
    - Understand the broader feature intent
    - Use it to evaluate whether the implementation fits the product, not just the literal acceptance criteria
 
-3. **The changed files** — `gh pr diff <number>`
+3. **Architectural Decisions** — if the issue has an Architectural Decisions section, read every referenced ADR in `docs/ADR/`
+   - These are binding constraints the implementation must follow
+   - Note the reasoning in each ADR — it explains *why* the constraint exists
+
+4. **The changed files** — `gh pr diff <number>`
    - Read every changed file
    - Understand what was added, modified, or removed
 
@@ -62,6 +66,9 @@ Does the implementation stay within the issue's out of scope boundaries? Flag an
 - Formatting is clean
 - Zero lint warnings or errors
 - No dead code, unused imports, or inconsistent naming
+
+### ADR Compliance
+If ADRs are referenced in the issue, does the implementation follow them? Check each referenced ADR and verify the code adheres to the decision. Flag any deviation — even if the code works, violating an ADR means the implementation is incorrect because it undermines a deliberate architectural choice.
 
 ### PRD Alignment
 Does the implementation reflect the intent of the PRD? Does anything contradict the PRD's goals or out of scope?

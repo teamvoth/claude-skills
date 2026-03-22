@@ -1,12 +1,14 @@
 ---
 name: prd-to-issues
 description: Use this skill when the user asks to "break down a PRD", "create issues from a PRD", "turn the PRD into tasks", "create GitHub issues for this feature", or is ready to move from planning to execution after a PRD exists. Also invoke after create-prd completes if the user wants to proceed immediately to task breakdown.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # PRD to Issues
 
-Read a PRD and create a set of GitHub issues that decompose it into executable vertical slices. Each issue is a self-contained work order intended to be executed by Claude with minimal human involvement — Claude will be given an issue and expected to implement it, write tests, and open a PR autonomously.
+Read a PRD and create a set of GitHub issues that decompose it into executable vertical slices. Before creating issues, identify and record architectural decisions as ADRs — these serve as durable reference for both humans and agents throughout implementation.
+
+Each issue is a self-contained work order intended to be executed by Claude with minimal human involvement — Claude will be given an issue and expected to implement it, write tests, and open a PR autonomously.
 
 ## Step 1: Read and Understand the PRD
 
@@ -28,7 +30,78 @@ Order the issues by logical implementation sequence. If an issue depends on code
 
 Think through each issue before creating any. You're writing work orders for an autonomous implementor — gaps in the issue body become gaps in the implementation.
 
-## Step 3: Create the GitHub Label
+## Step 3: Capture Architectural Decisions
+
+Before creating issues, scan the codebase and the PRD for decisions that will shape implementation. An architectural decision is any choice that:
+
+- **Constrains multiple issues** — e.g. "use SQLite for storage" affects every issue that touches data
+- **Would be costly to reverse later** — e.g. choosing an auth strategy, a data model shape, an API style
+- **Isn't obvious from the requirements alone** — e.g. the PRD says "persist data" but doesn't say how
+
+To identify decisions, examine the codebase for:
+- Existing patterns and conventions that the feature must follow (framework, ORM, test style, directory structure)
+- Integration points where the new feature connects to existing code
+- Technology choices implied but not stated by the PRD
+
+Also check `docs/ADR/` for existing ADRs. New decisions must not contradict existing ones without explicitly superseding them.
+
+### When to create ADRs
+
+- If the feature introduces **no new architectural decisions** (e.g. it follows existing patterns exactly), skip ADR creation and note this in Step 6's summary. Not every feature needs ADRs.
+- If you identify decisions, present them to the user for confirmation before writing files. The user may adjust, add, or remove decisions.
+
+### Writing ADRs
+
+Determine the next ADR number by listing `docs/ADR/` and incrementing from the highest existing number (start at `0001` if the directory is empty). Create `docs/ADR/` if it doesn't exist.
+
+Create one file per decision at `docs/ADR/<NNNN>-<slug>.md` using this template:
+
+```markdown
+# ADR-<NNNN>: <Decision Title>
+
+## Status
+
+Accepted
+
+## Context
+
+[What is the situation that requires a decision? What forces are at play — technical constraints, product requirements, existing patterns, team preferences? Be specific enough that someone reading this in six months understands why the question came up at all.]
+
+## Decision
+
+[State the decision clearly and directly. "We will use X" or "Y will be implemented as Z." No hedging.]
+
+## Consequences
+
+### Benefits
+- [What becomes easier, safer, or more consistent as a result of this decision]
+
+### Tradeoffs
+- [What becomes harder, more constrained, or ruled out. Every decision has tradeoffs — name them honestly.]
+
+## References
+
+- PRD: `docs/PRD/<feature-name>.md`
+- [Any other relevant docs, ADRs, or external resources]
+```
+
+Key principles for good ADRs:
+- **One decision per ADR.** If you're tempted to write "and also", that's two ADRs.
+- **Write for the implementor.** These will be read by agents executing issues. Be concrete — name specific libraries, patterns, file paths, and conventions.
+- **Record the why, not just the what.** The decision itself is one line. The context is what makes it valuable.
+- **Consequences must be honest.** If a tradeoff exists, state it. This prevents future agents from "optimizing" away a deliberate choice because they don't understand the reasoning.
+
+### Committing ADRs
+
+Commit all ADRs to the feature branch before creating issues:
+
+```bash
+git add docs/ADR/
+git commit -m "docs: add ADRs for <feature-name>"
+git push
+```
+
+## Step 4: Create the GitHub Label
 
 Before creating issues, ensure the feature label exists:
 
@@ -38,7 +111,7 @@ gh label create <feature-name> --color "#0075ca" --description "Issues for the <
 
 The `|| true` handles the case where the label already exists.
 
-## Step 4: Create Issues in Order
+## Step 5: Create Issues in Order
 
 Create issues one at a time, in sequence. You need each issue number before writing the next, because later issues may reference earlier ones as dependencies.
 
@@ -69,6 +142,12 @@ The following are explicitly not part of this issue:
 - [What this issue does NOT do — be specific. Prevents Claude from over-implementing.]
 - [Functionality covered by other issues in this feature]
 - [Anything deferred to a future feature]
+
+## Architectural Decisions
+
+[List any ADRs that govern this issue's implementation. If none apply, write "None." These are binding constraints — the implementor must follow them.]
+
+- `docs/ADR/<NNNN>-<slug>.md` — [one-line summary of how it affects this issue]
 
 ## Technical Notes
 
@@ -101,7 +180,7 @@ gh issue create \
 
 Capture the issue number from the output of each `gh issue create` command. You'll need it to populate dependency references in subsequent issues.
 
-## Step 5: Report Back
+## Step 6: Report Back
 
 Once all issues are created, output a summary:
 
@@ -112,6 +191,11 @@ Created N issues for <feature-name>:
 #2  <title> (depends on #1)
 #3  <title> (depends on #2)
 ...
+
+Architectural decisions recorded:
+- ADR-NNNN: <title>
+- ADR-NNNN: <title>
+(or: No new ADRs — feature follows existing patterns.)
 
 All issues are labeled `<feature-name>` and target the `feature/<feature-name>` branch.
 To begin implementation, direct Claude to: "execute the next open issue labeled <feature-name>"

@@ -50,6 +50,8 @@ Read the full issue body. Every section matters:
 
 Then read the referenced PRD (`docs/PRD/<feature-name>.md`). The PRD is the authoritative source of feature intent. Use it to resolve ambiguities in the issue and to ensure your implementation fits within the broader feature.
 
+If the issue has an **Architectural Decisions** section, read every referenced ADR in `docs/ADR/`. These are binding constraints — they document deliberate choices with specific reasoning. Do not deviate from them. If an ADR conflicts with what seems like a better approach, follow the ADR and note the tension in your PR description.
+
 ## Step 3: Scan the Codebase
 
 Before writing any code, understand the terrain. Look for:
