@@ -92,6 +92,7 @@ This step is not optional. A PR without passing tests does not get opened.
 
 **Tests:**
 - Write automated end-to-end functional tests that exercise every behavior listed in the acceptance criteria against real services (not mocks)
+- Tests must validate **behavioral correctness** — not just "did it run" but "did it produce the right output." For features that generate or transform data, assert on output quality: format conformance, grounding (outputs traceable to inputs), and semantic correctness
 - Write tests for every explicit error case and edge case described in the issue
 - Tests must pass: `[run the project's test command]`
 
