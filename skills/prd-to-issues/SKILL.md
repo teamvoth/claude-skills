@@ -22,33 +22,39 @@ Read the entire PRD before doing anything else. Pay close attention to:
 
 Extract the `feature-name` from the filename (e.g. `user-authentication.md` → `user-authentication`). The GitHub label will be `<feature-name>` and the branch will be `feature/<feature-name>`.
 
-## Step 2: Identify the Slices
+## Step 2: Identify Approach Decisions
 
-Each issue should be one vertical slice — a coherent, user-facing increment that can be implemented, tested, and reviewed independently. The default mapping is **one issue per acceptance criterion**. Combine criteria into a single issue only when they are inseparable (i.e. one cannot be implemented without the other). Split a criterion into multiple issues only when it's large enough to be its own meaningful increment.
+Before decomposing into issues, identify decisions that will shape how the work gets sliced. These are choices where picking the wrong approach means rework — not just in one issue, but across multiple.
 
-Order the issues by logical implementation sequence. If an issue depends on code or behavior from a prior issue, it must come after it.
+Scan the PRD and codebase for:
+- **Implementation strategies** — e.g. single LLM call vs. decomposed multi-call pipeline, sync vs. async processing, monolith vs. service boundary
+- **Technology choices** implied but not stated — e.g. the PRD says "persist data" but doesn't say how
+- **Integration approaches** — how the new feature connects to existing code
+- **Patterns that constrain multiple issues** — e.g. "use SQLite for storage" affects every issue that touches data
+- Existing ADRs in `docs/ADR/` that apply — new decisions must not contradict them without explicitly superseding
 
-Think through each issue before creating any. You're writing work orders for an autonomous implementor — gaps in the issue body become gaps in the implementation.
+For each decision identified, assess: **would choosing wrong here be expensive to reverse?** If yes, it must be resolved before slicing.
 
-## Step 3: Capture Architectural Decisions
+### Resolve decisions with the user
 
-Before creating issues, scan the codebase and the PRD for decisions that will shape implementation. An architectural decision is any choice that:
+If you identified any high-impact approach decisions, invoke `/grill-me` to work through them with the user. Focus the grilling on:
+- The specific decision points you identified
+- The tradeoffs between approaches (not just "which do you prefer" — surface what each option enables and forecloses)
+- How each choice affects the issue decomposition
+
+**Do not proceed to Step 3 until all approach decisions are resolved.** These decisions are the inputs to how issues get sliced — slicing before deciding leads to rework.
+
+If the feature introduces **no new approach decisions** (e.g. it follows existing patterns exactly), skip the grilling and note this. Not every feature needs it.
+
+## Step 3: Capture Architectural Decisions as ADRs
+
+Convert the resolved decisions from Step 2 into ADRs. Each decision that:
 
 - **Constrains multiple issues** — e.g. "use SQLite for storage" affects every issue that touches data
 - **Would be costly to reverse later** — e.g. choosing an auth strategy, a data model shape, an API style
 - **Isn't obvious from the requirements alone** — e.g. the PRD says "persist data" but doesn't say how
 
-To identify decisions, examine the codebase for:
-- Existing patterns and conventions that the feature must follow (framework, ORM, test style, directory structure)
-- Integration points where the new feature connects to existing code
-- Technology choices implied but not stated by the PRD
-
-Also check `docs/ADR/` for existing ADRs. New decisions must not contradict existing ones without explicitly superseding them.
-
-### When to create ADRs
-
-- If the feature introduces **no new architectural decisions** (e.g. it follows existing patterns exactly), skip ADR creation and note this in Step 6's summary. Not every feature needs ADRs.
-- If you identify decisions, present them to the user for confirmation before writing files. The user may adjust, add, or remove decisions.
+...gets its own ADR. Decisions that were resolved during grilling should be captured verbatim — the reasoning the user provided is the "Context" section of the ADR.
 
 ### Writing ADRs
 
@@ -101,7 +107,17 @@ git commit -m "docs: add ADRs for <feature-name>"
 git push
 ```
 
-## Step 4: Create the GitHub Label
+## Step 4: Decompose Into Slices
+
+Now that approach decisions are resolved and recorded as ADRs, decompose the PRD into issues. The resolved decisions inform how you slice — e.g. if you decided on a multi-call pipeline, each call stage might be its own issue; if you decided on a single call, the pipeline is one issue.
+
+Each issue should be one vertical slice — a coherent, user-facing increment that can be implemented, tested, and reviewed independently. The default mapping is **one issue per acceptance criterion**. Combine criteria into a single issue only when they are inseparable (i.e. one cannot be implemented without the other). Split a criterion into multiple issues only when it's large enough to be its own meaningful increment.
+
+Order the issues by logical implementation sequence. If an issue depends on code or behavior from a prior issue, it must come after it.
+
+Think through each issue before creating any. You're writing work orders for an autonomous implementor — gaps in the issue body become gaps in the implementation. Every ADR that constrains an issue must be referenced in that issue's body.
+
+## Step 5: Create the GitHub Label
 
 Before creating issues, ensure the feature label exists:
 
@@ -111,7 +127,7 @@ gh label create <feature-name> --color "#0075ca" --description "Issues for the <
 
 The `|| true` handles the case where the label already exists.
 
-## Step 5: Create Issues in Order
+## Step 6: Create Issues in Order
 
 Create issues one at a time, in sequence. You need each issue number before writing the next, because later issues may reference earlier ones as dependencies.
 
@@ -180,7 +196,7 @@ gh issue create \
 
 Capture the issue number from the output of each `gh issue create` command. You'll need it to populate dependency references in subsequent issues.
 
-## Step 6: Report Back
+## Step 7: Report Back
 
 Once all issues are created, output a summary:
 

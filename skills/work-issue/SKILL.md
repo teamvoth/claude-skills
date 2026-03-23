@@ -54,13 +54,16 @@ If the issue has an **Architectural Decisions** section, read every referenced A
 
 ## Step 3: Scan the Codebase
 
-Before writing any code, understand the terrain. Look for:
-- Code directly relevant to what the issue asks you to build
-- Existing patterns and conventions you should follow (naming, structure, error handling)
-- The testing framework and patterns used — you'll need to match them
-- Anything that could conflict with or be impacted by the changes you're about to make
+Before writing any code, understand the terrain. Spawn an **Explore subagent** to investigate the codebase and report back. This keeps research out of the main context window.
 
-Do this deliberately. The quality of your implementation depends on fitting cleanly into what already exists.
+The subagent prompt should include the full issue body and ask it to find and report:
+- Code directly relevant to what the issue asks you to build (file paths, key types, function signatures)
+- Existing patterns and conventions to follow (naming, structure, error handling style)
+- The testing framework and patterns used — with concrete examples of existing test files
+- Anything that could conflict with or be impacted by the changes
+- Relevant configuration, environment variables, or service dependencies
+
+**Wait for the subagent to return before proceeding.** Use its findings as the input to Step 4 — do not re-scan the codebase yourself.
 
 ## Step 4: Implement
 
@@ -74,14 +77,21 @@ git checkout -b task/<issue-number>
 
 Implement the changes required to satisfy the acceptance criteria. Stay within scope — the Out of Scope section is a hard boundary, not a suggestion. If the issue says "does not include X," do not include X even if it seems like a natural addition.
 
-Write code that fits the conventions you observed in Step 3. Don't introduce new patterns when existing ones will do.
+Write code that fits the conventions identified in Step 3. Don't introduce new patterns when existing ones will do.
+
+**For complex implementations** (multiple modules, significant logic, or unfamiliar territory), consider splitting the work across subagents by component or concern area. Each subagent should receive:
+- The relevant subset of the issue's acceptance criteria
+- The codebase context from Step 3 (conventions, patterns, relevant files)
+- Clear boundaries on what files it should create or modify
+
+Use your judgment on when this is warranted — a single-file change doesn't need delegation, but a multi-module feature benefits from it.
 
 ## Step 5: Write Tests and Verify Quality
 
 This step is not optional. A PR without passing tests does not get opened.
 
 **Tests:**
-- Write automated user acceptance tests that exercise every behavior listed in the acceptance criteria
+- Write automated end-to-end functional tests that exercise every behavior listed in the acceptance criteria against real services (not mocks)
 - Write tests for every explicit error case and edge case described in the issue
 - Tests must pass: `[run the project's test command]`
 
