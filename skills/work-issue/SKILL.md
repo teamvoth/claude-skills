@@ -94,14 +94,20 @@ This step is not optional. A PR without passing tests does not get opened.
 - Write automated end-to-end functional tests that exercise every behavior listed in the acceptance criteria against real services (not mocks)
 - Tests must validate **behavioral correctness** — not just "did it run" but "did it produce the right output." For features that generate or transform data, assert on output quality: format conformance, grounding (outputs traceable to inputs), and semantic correctness
 - Write tests for every explicit error case and edge case described in the issue
-- Tests must pass: `[run the project's test command]`
+
+**Run all tests locally — this is a gate, not a suggestion:**
+- Identify the project's test runner and test commands (check `package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, or equivalent)
+- If the project has external dependencies (databases, message queues, cloud services, etc.), set them up before running tests. Use Docker Compose, local services, or whatever the project documents. If nothing is documented, check for `docker-compose.yml`, `.env.example`, or setup scripts. If dependencies cannot be set up, flag this as a blocker — do not skip the tests
+- Run the **full** integration/e2e test suite, not just the tests you wrote. Your changes must not break existing tests
+- If any test fails, fix the issue and re-run. Do not open a PR with failing tests
+- Include the test run output (or a summary) in your PR description so reviewers can see the suite passed
 
 **Code quality:**
 - Run the formatter — code must be clean
 - Run the linter — zero warnings, zero errors
 - Fix anything that flags before proceeding
 
-Both requirements are also in `CLAUDE.md` for this project. They are non-negotiable. A clean implementation that fails a lint check is not a complete implementation.
+All of these requirements are non-negotiable. A clean implementation that fails a test or lint check is not a complete implementation.
 
 ## Step 6: Open the PR
 
