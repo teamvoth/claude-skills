@@ -151,6 +151,20 @@ Full context, goals, and constraints for this feature are documented there.
 - [ ] [Criterion]
 - [ ] [Criterion]
 
+## Test Scenarios
+
+[For each acceptance criterion above, write at least one concrete test scenario. These are the tests the implementor must write — not suggestions, specifications. Each scenario must be specific enough that two different implementors would write essentially the same test.]
+
+### [Criterion name or short description]
+
+| Scenario | Input / Setup | Action | Expected Result |
+|---|---|---|---|
+| [Happy path] | [Specific input data or preconditions] | [What the test does] | [Exact expected output or behavior] |
+| [Edge case] | [Setup] | [Action] | [Expected result] |
+| [Error case] | [Setup that triggers failure] | [Action] | [Expected error behavior] |
+
+[Repeat for each acceptance criterion. Every criterion must have at least one scenario. Error cases and edge cases described in the PRD must appear here — do not leave them for the implementor to invent.]
+
 ## Out of Scope
 
 The following are explicitly not part of this issue:
@@ -178,9 +192,8 @@ The following are explicitly not part of this issue:
 Before opening a PR, confirm:
 
 - [ ] All acceptance criteria above are satisfied
-- [ ] Automated user acceptance tests cover every functional behavior in the acceptance criteria
-- [ ] Automated tests cover all explicit error cases and edge cases described above
-- [ ] All tests pass
+- [ ] Every test scenario in the Test Scenarios section has a corresponding automated test
+- [ ] All tests pass when run locally against real services (not mocks)
 - [ ] No functionality outside the scope of this issue is added or modified
 - [ ] PR targets the `feature/<feature-name>` branch
 ```

@@ -90,10 +90,16 @@ Use your judgment on when this is warranted — a single-file change doesn't nee
 
 This step is not optional. A PR without passing tests does not get opened.
 
-**Tests:**
-- Write automated end-to-end functional tests that exercise every behavior listed in the acceptance criteria against real services (not mocks)
-- Tests must validate **behavioral correctness** — not just "did it run" but "did it produce the right output." For features that generate or transform data, assert on output quality: format conformance, grounding (outputs traceable to inputs), and semantic correctness
-- Write tests for every explicit error case and edge case described in the issue
+**Write tests from the issue's Test Scenarios section:**
+- The issue contains a **Test Scenarios** section with concrete scenarios (inputs, actions, expected results) for each acceptance criterion. Implement every scenario as an automated test. These are specifications, not suggestions — do not skip, simplify, or reinterpret them
+- Tests must run against real services (not mocks) and validate **behavioral correctness** — not just "did it run" but "did it produce the right output"
+- If the issue has no Test Scenarios section, write tests that cover every acceptance criterion and flag this gap in the PR description
+
+**Coverage cross-check — do this before running the suite:**
+- List every acceptance criterion from the issue
+- List every test scenario from the issue
+- Map each to at least one test you wrote. If any criterion or scenario has no corresponding test, write the missing test before proceeding
+- Include this mapping in the PR description as a "Test Coverage" section so reviewers can verify completeness
 
 **Run all tests locally — this is a gate, not a suggestion:**
 - Identify the project's test runner and test commands (check `package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, or equivalent)
