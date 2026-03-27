@@ -6,7 +6,7 @@ version: 2.0.0
 
 # PR Review
 
-Evaluate a pull request by spawning five focused specialist sub-agents in parallel, each reviewing one dimension deeply. Aggregate their verdicts against CI status to make the final merge or block decision.
+Evaluate a pull request by spawning six focused specialist sub-agents in parallel, each reviewing one dimension deeply. Aggregate their verdicts against CI status to make the final merge or block decision.
 
 ## Step 1: Identify the PR
 
@@ -37,9 +37,9 @@ Fetch each piece of context below and hold it in memory under the given name. **
 
 If the diff is large, pass it in full. Do not truncate — truncation causes missed findings.
 
-## Step 3: Spawn Five Parallel Sub-Agent Reviewers
+## Step 3: Spawn Six Parallel Sub-Agent Reviewers
 
-**In a single message, invoke the Agent tool five times in parallel — one call per reviewer.** Do not call them sequentially.
+**In a single message, invoke the Agent tool six times in parallel — one call per reviewer.** Do not call them sequentially.
 
 Each agent prompt must include three parts in order:
 1. The shared output format preamble (below)
@@ -88,22 +88,40 @@ If the diff contains no user-facing input or external data handling, state that 
 
 ---
 
-### Agent 2 — Test Quality Analyst
+### Agent 2 — Test Scenario Compliance
 
 Scope instruction:
 ```
-Evaluate this PR exclusively for test quality. Check:
-(1) Does the test suite cover every behavior listed in the acceptance criteria — trace each criterion to at least one test
-(2) Are integration or functional tests present where the feature involves multiple components interacting
-(3) Would the tests actually catch regressions — look for tests that assert implementation details rather than behavior, tests with no meaningful assertions, or tests that would pass even if the production code were deleted
-(4) Do the test file structure, naming conventions, and assertion patterns match the existing codebase style visible in the diff
+Evaluate this PR exclusively for compliance with the test scenarios prescribed in the issue. Check:
+(1) Find the "Test Scenarios" section in the issue body. It contains a table of scenarios per acceptance criterion, each with Input/Setup, Action, and Expected Result columns
+(2) For every scenario in that table, find the corresponding automated test in the diff. Trace each scenario to a specific test function — name both the scenario and the test
+(3) Verify the test actually exercises the described Input/Setup, performs the described Action, and asserts the described Expected Result. A test that only partially covers a scenario (e.g. checks the action but not the expected result) is incomplete
+(4) Check that the PR description includes a "Test Coverage" mapping section showing which test covers which criterion/scenario
 
-Any acceptance criterion with no corresponding test is a FAIL.
+Any prescribed test scenario with no corresponding test is a FAIL.
+Any scenario where the test does not match the prescribed Input/Action/Expected Result is a FAIL.
+If the issue has no Test Scenarios section, return WARN and note the gap — then fall back to checking that each acceptance criterion has at least one test.
 ```
 
 ---
 
-### Agent 3 — Task Compliance Reviewer
+### Agent 3 — Test Coverage & Quality
+
+Scope instruction:
+```
+Evaluate this PR independently for test coverage quality — go beyond the prescribed scenarios and assess whether the tests are actually sufficient. Check:
+(1) Read the production code in the diff. Identify all code paths, branches, error handlers, and edge cases. Are there behaviors the code handles that have no corresponding test? Flag any untested paths
+(2) Evaluate test meaningfulness: would the tests actually catch regressions? Look for tests with no meaningful assertions, tests that assert implementation details rather than behavior, or tests that would pass even if the production code were deleted or returned hardcoded values
+(3) Check for mock misuse: are mocks used where real services should be exercised? Tests that mock the thing they're supposed to be testing provide false confidence. Integration and e2e tests must hit real dependencies
+(4) Evaluate assertion quality: do tests verify behavioral correctness (correct output format, correct data, correct side effects) or just "no error thrown"? For features that generate or transform data, are there assertions on output quality — format conformance, grounding (outputs traceable to inputs), semantic correctness?
+(5) Do the test file structure, naming conventions, and assertion patterns match the existing codebase style visible in the diff
+
+Any production code path with no test coverage is a WARN. Mock misuse where real services should be tested is a FAIL. Tests with no meaningful assertions are a FAIL.
+```
+
+---
+
+### Agent 4 — Task Compliance Reviewer
 
 Scope instruction:
 ```
@@ -118,7 +136,7 @@ Any unmet acceptance criterion is a FAIL. Any out-of-scope change is a FAIL.
 
 ---
 
-### Agent 4 — Architecture & Standards Reviewer
+### Agent 5 — Architecture & Standards Reviewer
 
 Scope instruction:
 ```
@@ -133,7 +151,7 @@ If no ADRs were provided, state this and skip that check.
 
 ---
 
-### Agent 5 — Performance & Reliability Reviewer
+### Agent 6 — Performance & Reliability Reviewer
 
 Scope instruction:
 ```
@@ -183,18 +201,19 @@ Distinguish a code failure from an infrastructure flake — note the difference 
 
 ## Step 5: Aggregate Results and Decide
 
-Collect the five agent reports. Build a decision table:
+Collect the six agent reports. Build a decision table:
 
 | Reviewer | Verdict | Blocking | Warnings |
 |---|---|---|---|
 | Security | | | |
-| Test Quality | | | |
+| Test Scenario Compliance | | | |
+| Test Coverage & Quality | | | |
 | Task Compliance | | | |
 | Architecture & Standards | | | |
 | Performance & Reliability | | | |
 | CI | | — | — |
 
-**Merge if and only if**: all five agents returned PASS or WARN (zero FAILs) AND CI is passing.
+**Merge if and only if**: all six agents returned PASS or WARN (zero FAILs) AND CI is passing.
 
 **Request changes if**: any agent returned FAIL, OR CI is failing with a code failure (not an infra flake).
 
@@ -232,7 +251,8 @@ gh pr comment <number> --body "$(cat <<'EOF'
 | Reviewer | Verdict | Blocking | Warnings |
 |---|---|---|---|
 | Security | ✅ PASS / ❌ FAIL / ⚠️ WARN | N | N |
-| Test Quality | | | |
+| Test Scenario Compliance | | | |
+| Test Coverage & Quality | | | |
 | Task Compliance | | | |
 | Architecture & Standards | | | |
 | Performance & Reliability | | | |
