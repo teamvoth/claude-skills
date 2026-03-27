@@ -1,0 +1,12 @@
+{
+  "name": "local",
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": "./"
+    }
+  ],
+  "owner": {
+    "name": "bradvoth"
+  }
+}

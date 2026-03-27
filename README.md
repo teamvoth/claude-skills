@@ -16,44 +16,18 @@ A curated set of Claude Code skills for structured feature development — from 
 
 ## Install
 
-Clone this repository to your machine:
+Install from the Claude Code plugin marketplace:
 
-```bash
-git clone https://github.com/bradvoth/claude-skills.git ~/claude-skills
+```
+/install-plugin bradvoth/claude-skills
 ```
 
-Then open Claude Code, point it at this README, and say:
-
-> "Install the claude-skills plugin on this machine following the README"
-
-Claude will register the plugin by adding the following to `~/.claude/plugins/installed_plugins.json`:
-
-```json
-"claude-skills@local": [
-  {
-    "scope": "user",
-    "installPath": "/Users/<you>/claude-skills",
-    "version": "local",
-    "installedAt": "<current-timestamp>",
-    "lastUpdated": "<current-timestamp>"
-  }
-]
-```
-
-And enable it in `~/.claude/settings.json`:
-
-```json
-"enabledPlugins": {
-  "claude-skills@local": true
-}
-```
-
-Then restart Claude Code. Run `/reload-plugins` to confirm the skills loaded.
+Then restart Claude Code to activate the skills.
 
 ## Auto-Update
 
-The plugin automatically pulls the latest changes from GitHub at the start of every Claude Code session. Updates are live on the next restart after a pull lands.
+Plugin updates are delivered through the marketplace. Updates take effect on your next Claude Code session.
 
 ## Contributing
 
-Submit a PR. Merged changes propagate to everyone on their next Claude Code session start.
+Submit a PR to [bradvoth/claude-skills](https://github.com/bradvoth/claude-skills). Merged changes are published to the marketplace.
