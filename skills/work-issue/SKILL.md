@@ -114,8 +114,10 @@ Write tests from the issue's Test Scenarios section:
 
 ## Code quality
 
+- Build the project — the code must compile with zero errors. Identify the build command from the project config (`npm run build`, `cargo build`, `go build ./...`, `tsc`, etc.) and run it. Fix any compilation errors before proceeding
 - Run the formatter — code must be clean
 - Run the linter — zero warnings, zero errors
+- Run the full test suite — all tests must pass, not just the ones you wrote
 - Fix anything that flags
 
 ## When you are done
