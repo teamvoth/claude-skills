@@ -1,7 +1,7 @@
 ---
 name: grill-me
 description: Use this skill when the user invokes "/grill-me", asks to be "grilled", wants to think through a task or feature before starting, says "let's think this through", wants to clarify requirements, or asks Claude to ask them questions before diving in. Also use PROACTIVELY (without being asked) when a task involves design decisions that would be expensive to reverse — e.g., choosing between architectural approaches, data models, API designs, processing strategies, or technology selections. If a wrong assumption here means hours of rework, grill first. Do NOT use for straightforward implementation tasks where the approach is obvious.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # Grill Me
@@ -14,15 +14,21 @@ When a task seems clear on the surface, the real requirements are almost always 
 
 ## How to grill
 
-Work like a detective following threads. Start with the broadest question that gets at the core intent, listen carefully to the answer, and then branch into the most important unknowns that answer reveals. You're building a decision tree in real time — each answer either closes a branch or opens new ones.
+Use the **AskUserQuestion tool** as your primary mode of interaction. Each round of grilling is one AskUserQuestion call with 1-4 focused questions. Do not dump questions as prose — every question goes through the tool so the user gets a structured, interactive experience.
 
-**Start by establishing:**
+Work like a detective following threads. Start with the broadest questions that get at the core intent, read the answers carefully, and then branch into the most important unknowns those answers reveal. You're building a decision tree in real time — each answer either closes a branch or opens new ones.
+
+### Round 1: Establish the core
+
+Your first AskUserQuestion call should establish the foundation. Choose the most important questions from:
 - What is the end goal? (Not the implementation — the outcome)
 - Who is the user of this thing, and what do they need to accomplish?
 - What already exists, and what's net-new?
 - What does "done" look like? How will success be measured?
 
-**Then drill into:**
+### Subsequent rounds: Follow the threads
+
+Based on each answer, formulate the next round of questions. Drill into:
 - Edge cases the user hasn't mentioned (what happens when X fails, when input is empty, when there are 10,000 items instead of 10?)
 - Constraints that would change the approach (performance, security, compatibility, reversibility)
 - Decisions that seem obvious but often aren't (ordering, priority, permissions, defaults)
@@ -34,22 +40,33 @@ Work like a detective following threads. Start with the broadest question that g
 - Are there existing patterns or conventions to follow?
 - What failure modes should be handled gracefully?
 
+### Crafting good AskUserQuestion calls
+
+- **Use options when there are clear choices.** If you can anticipate 2-4 reasonable answers, present them as options. The user can always pick "Other" for a custom response.
+- **Use descriptions on options to surface trade-offs.** Don't just list choices — explain what each choice implies downstream.
+- **Use multiSelect when choices aren't mutually exclusive.** "Which of these edge cases matter?" is a multi-select question.
+- **Use previews when comparing concrete artifacts.** If the question involves choosing between API shapes, data models, or UI layouts, include preview content so the user can visually compare.
+- **Batch related questions in a single call** (up to 4). Don't ask one question per round when three related questions can be answered together.
+- **Don't ask questions you can answer yourself.** If reading the codebase or docs would resolve the question, do that first. Only grill the user on decisions that require their judgment or domain knowledge.
+
 ## Style
 
 Be direct and curious, not bureaucratic. Don't recite a checklist — ask the most important question first, then follow the thread. Two or three good follow-up questions are worth more than ten generic ones.
 
-If an answer is vague, push on it. "Something like a dashboard" is not a requirement. Ask what data, what audience, what interaction model, what update frequency.
+If an answer is vague, push on it. "Something like a dashboard" is not a requirement. Ask what data, what audience, what interaction model, what update frequency. Use a follow-up AskUserQuestion call with more specific options to force precision.
 
-Keep asking until you can confidently describe what you're about to build — including its edges, its constraints, and why those choices were made — and the user confirms that description is correct.
+Keep asking until you can confidently describe what you're about to build — including its edges, its constraints, and why those choices were made.
 
 ## Ending the grill
 
-When you believe you have a complete picture, summarize your understanding back to the user in plain language. Cover:
+When you believe you have a complete picture, summarize your understanding back to the user in plain text. Cover:
 - The core goal
 - Key decisions made
 - Constraints and non-goals
 - Any open questions or acknowledged trade-offs
 
-Ask: "Does this capture it, or is there anything I'm missing?"
+Then use one final AskUserQuestion call to confirm:
+- Question: "Does this capture everything, or is something missing?"
+- Options: "Yes, that's complete" / "Almost — a few corrections" / "Missing something important"
 
-Only after explicit confirmation should you stop grilling and move to the next phase of work.
+Only after the user confirms completeness should you stop grilling and move to the next phase of work.
