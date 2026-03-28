@@ -221,17 +221,17 @@ Collect the six agent reports. Build a decision table:
 | Performance & Reliability | | | |
 | CI | | — | — |
 
-**Merge if and only if**: all six agents returned PASS or WARN (zero FAILs) AND CI is passing.
+**Merge if and only if**: all six agents returned PASS (zero FAILs, zero WARNs) AND CI is passing.
 
-**Request changes if**: any agent returned FAIL, OR CI is failing with a code failure (not an infra flake).
+**Request changes if**: any agent returned FAIL or WARN, OR CI is failing with a code failure (not an infra flake).
 
 **Wait**: if CI is still pending, use `gh run watch` to wait for completion before deciding.
 
-Warnings do not block merge — include them in the review comment as observations.
+Warnings block merge just like failures. WARNs typically indicate tech debt, missing edge-case coverage, or code quality issues that are straightforward to fix — letting them through accumulates debt that is cheapest to resolve right now, before the PR is merged. Include the full WARN findings in the review comment so the author knows exactly what to address.
 
 ---
 
-### Everything passes → merge
+### All PASS, CI green → merge
 
 ```bash
 gh pr merge <number> --squash --delete-branch
@@ -246,13 +246,13 @@ Issue #<N> closed.
 
 ---
 
-### Anything fails → request changes
+### Any FAIL or WARN → request changes
 
 ```bash
 gh pr comment <number> --body "$(cat <<'EOF'
 ## Review
 
-[One sentence summary — e.g. "Needs changes: 2 blocking findings across security and test coverage."]
+[One sentence summary — e.g. "Needs changes: 2 blocking findings across security and test coverage." Include both FAILs and WARNs in the count.]
 
 ### Sub-Agent Results
 
@@ -285,12 +285,12 @@ gh pr comment <number> --body "$(cat <<'EOF'
 
 ---
 
-Resolve all FAIL items above and the PR will be ready to merge.
+Resolve all FAIL and WARN items above and the PR will be ready to merge.
 EOF
 )"
 ```
 
-Do not merge a PR with any open issues. Do not approve without merging — either it's ready and gets merged, or it gets blocked with clear feedback.
+Do not merge a PR with any open FAIL or WARN findings. Do not approve without merging — either it's ready and gets merged, or it gets blocked with clear feedback.
 
 ## Failure Modes
 
