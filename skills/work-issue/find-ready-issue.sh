@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# find-ready-issue.sh — Find the next ready GitHub issue to work on.
-# Checks dependency resolution and returns the lowest-numbered open issue
-# where all dependencies are closed.
+# find-ready-issue.sh — Find the next ready GitHub issue and extract all context paths.
+# Checks dependency resolution, extracts PRD and ADR references from the issue body,
+# and returns everything the orchestrator needs to start work.
 #
 # Usage: find-ready-issue.sh [LABEL]
 #   LABEL: optional GitHub label to filter issues
 #
-# stdout: JSON with issue data and dependency audit trail
+# stdout: JSON with issue data, resolved paths, and dependency audit trail
 # stderr: error messages
 # exit 0: found a ready issue
 # exit 1: no ready issues or error
@@ -95,9 +95,6 @@ for i in $(seq 0 $((ISSUE_COUNT - 1))); do
 
   if [[ "$ALL_RESOLVED" == true && -z "$SELECTED_INDEX" ]]; then
     SELECTED_INDEX=$i
-    # Don't break — continue checking remaining issues for the audit trail
-    # Actually, we can break to save API calls. The audit trail for unchecked
-    # issues is less valuable than speed.
     break
   fi
 done
@@ -114,7 +111,7 @@ if [[ -z "$SELECTED_INDEX" ]]; then
   exit 1
 fi
 
-# --- Output the selected issue ---
+# --- Extract context paths from the selected issue ---
 
 SELECTED_ISSUE=$(echo "$ISSUES_JSON" | jq ".[$SELECTED_INDEX]")
 SELECTED_NUM=$(echo "$SELECTED_ISSUE" | jq -r '.number')
@@ -122,11 +119,54 @@ SELECTED_TITLE=$(echo "$SELECTED_ISSUE" | jq -r '.title')
 SELECTED_BODY=$(echo "$SELECTED_ISSUE" | jq -r '.body')
 SELECTED_LABELS=$(echo "$SELECTED_ISSUE" | jq '[.labels[].name]')
 
+# Extract feature name from labels (first label that isn't "blocked" or similar)
+FEATURE_NAME=""
+for label in $(echo "$SELECTED_LABELS" | jq -r '.[]'); do
+  if [[ "$label" != "blocked" && "$label" != "bug" && "$label" != "enhancement" ]]; then
+    FEATURE_NAME="$label"
+    break
+  fi
+done
+
+# Extract PRD path from the "## PRD Reference" section
+PRD_SECTION=$(echo "$SELECTED_BODY" | awk '/^## PRD Reference/{found=1; next} /^## /{if(found) exit} found{print}')
+PRD_PATH=$(echo "$PRD_SECTION" | grep -oE 'docs/PRD/[^ `\)]+' | head -1 || true)
+
+# Validate PRD exists
+PRD_EXISTS=false
+if [[ -n "$PRD_PATH" && -f "$PRD_PATH" ]]; then
+  PRD_EXISTS=true
+fi
+
+# Extract ADR paths from the "## Architectural Decisions" section
+ADR_SECTION=$(echo "$SELECTED_BODY" | awk '/^## Architectural Decisions/{found=1; next} /^## /{if(found) exit} found{print}')
+ADR_PATHS_RAW=$(echo "$ADR_SECTION" | grep -oE 'docs/ADR/[^ `\)]+' || true)
+
+# Validate each ADR exists and build JSON array
+ADR_JSON="[]"
+if [[ -n "$ADR_PATHS_RAW" ]]; then
+  while IFS= read -r adr_path; do
+    [[ -n "$adr_path" ]] || continue
+    adr_exists=false
+    [[ -f "$adr_path" ]] && adr_exists=true
+    ADR_JSON=$(echo "$ADR_JSON" | jq \
+      --arg path "$adr_path" \
+      --argjson exists "$adr_exists" \
+      '. + [{"path": $path, "exists": $exists}]')
+  done <<< "$ADR_PATHS_RAW"
+fi
+
+# --- Output JSON ---
+
 jq -n \
   --argjson number "$SELECTED_NUM" \
   --arg title "$SELECTED_TITLE" \
   --arg body "$SELECTED_BODY" \
   --argjson labels "$SELECTED_LABELS" \
+  --arg featureName "$FEATURE_NAME" \
+  --arg prdPath "$PRD_PATH" \
+  --argjson prdExists "$PRD_EXISTS" \
+  --argjson adrs "$ADR_JSON" \
   --argjson checked "$CHECKED_JSON" \
   --argjson selected "$SELECTED_NUM" \
   '{
@@ -135,6 +175,14 @@ jq -n \
       title: $title,
       body: $body,
       labels: $labels
+    },
+    context: {
+      featureName: $featureName,
+      prd: {
+        path: $prdPath,
+        exists: $prdExists
+      },
+      adrs: $adrs
     },
     dependencies: {
       checked: $checked,
