@@ -1,7 +1,7 @@
 ---
 name: grill-me
-description: Use this skill when the user invokes "/grill-me", asks to be "grilled", wants to think through a task or feature before starting, says "let's think this through", wants to clarify requirements, or asks Claude to ask them questions before diving in. Also use PROACTIVELY (without being asked) when a task involves design decisions that would be expensive to reverse — e.g., choosing between architectural approaches, data models, API designs, processing strategies, or technology selections. If a wrong assumption here means hours of rework, grill first. Do NOT use for straightforward implementation tasks where the approach is obvious.
-version: 2.0.0
+description: Conducts a structured interview to surface unstated requirements and design decisions before implementation. Uses iterative AskUserQuestion calls to identify gaps, edge cases, and constraints that would cause rework if missed. Triggers on "grill me", "let's think this through", "clarify requirements", or proactively when a task involves design decisions that would be expensive to reverse. Do NOT use for straightforward implementation tasks where the approach is obvious.
+version: 2.1.0
 ---
 
 # Grill Me
