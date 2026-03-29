@@ -54,9 +54,12 @@ BASE_REF=$(echo "$PR_JSON" | jq -r '.baseRefName')
 ISSUE_NUMBER=$(echo "$PR_BODY" | grep -ioE '(closes|fixes|resolves):?\s*#[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
 [[ -n "$ISSUE_NUMBER" ]] || die "PR #$PR_NUMBER has no linked issue (expected 'Closes #N', 'Fixes #N', or 'Resolves #N' in the body)."
 
-# Verify the issue exists
-gh issue view "$ISSUE_NUMBER" --json number >/dev/null 2>&1 \
+# Fetch the linked issue
+ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --json number,title,body 2>/dev/null) \
   || die "Linked issue #$ISSUE_NUMBER does not exist."
+
+ISSUE_TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
+ISSUE_BODY=$(echo "$ISSUE_JSON" | jq -r '.body')
 
 # --- Fetch diff (excluding noise) ---
 
@@ -118,6 +121,8 @@ jq -n \
   --arg headRef "$HEAD_REF" \
   --arg baseRef "$BASE_REF" \
   --argjson issueNumber "$ISSUE_NUMBER" \
+  --arg issueTitle "$ISSUE_TITLE" \
+  --arg issueBody "$ISSUE_BODY" \
   --arg diffFile "$DIFF_FILE" \
   --argjson diffLines "$DIFF_LINES" \
   '{
@@ -127,7 +132,11 @@ jq -n \
       headRef: $headRef,
       baseRef: $baseRef
     },
-    issueNumber: $issueNumber,
+    issue: {
+      number: $issueNumber,
+      title: $issueTitle,
+      body: $issueBody
+    },
     diff: {
       file: $diffFile,
       lines: $diffLines

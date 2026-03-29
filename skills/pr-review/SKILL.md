@@ -16,12 +16,12 @@ Run the context collection script. If a PR number was provided as an argument, p
 bash "${CLAUDE_PLUGIN_ROOT}/skills/pr-review/collect-context.sh" [PR_NUMBER]
 ```
 
-The script validates the PR (not draft, has linked issue) and returns JSON:
+The script validates the PR (not draft, has linked issue), fetches the linked issue, and returns JSON:
 
 ```json
 {
   "pr": { "number": 42, "title": "...", "headRef": "...", "baseRef": "..." },
-  "issueNumber": 17,
+  "issue": { "number": 17, "title": "...", "body": "..." },
   "diff": { "file": "/tmp/pr-review-42.diff", "lines": 350 }
 }
 ```
@@ -32,7 +32,7 @@ If the script exits non-zero, report the error to the user and stop.
 
 Using the script output, fetch each piece of context below and hold it in memory. **Do not spawn sub-agents until all variables are populated.**
 
-- **`ISSUE_BODY`** — `gh issue view <issueNumber> --json title,body`
+- **`ISSUE_BODY`** — Available directly from `issue.body` in the script output.
 - **`PRD_CONTENT`** — Find the feature name from the PRD Reference field in the issue body. Read `docs/PRD/<feature-name>.md`. If the file does not exist, set `PRD_CONTENT = "PRD not found — file docs/PRD/<feature-name>.md is missing."` and note the discrepancy.
 - **`ADR_CONTENTS`** — Find the Architectural Decisions section in the issue body. For each referenced ADR, read `docs/ADR/<NNNN>-<slug>.md` and concatenate with a `--- ADR: <filename> ---` header. If no ADRs are referenced, set `ADR_CONTENTS = "No ADRs referenced in this issue."`
 - **`PR_DIFF`** — Read the diff file from the path in the script output. The diff excludes lock files and generated artifacts. If the diff is large, pass it in full to sub-agents. Do not truncate — truncation causes missed findings.
