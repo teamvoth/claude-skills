@@ -1,7 +1,9 @@
 ---
 name: work-issue
-description: Use this skill when the user asks to "work the next issue", "execute the next task", "implement the next issue", "work issue <N>", or wants Claude to autonomously pick up and implement the next ready GitHub issue. Optionally scoped to a feature with a label. This skill is designed for hands-off autonomous execution.
-version: 2.0.0
+description: Autonomously implements the next ready GitHub issue. Picks up the lowest-numbered open issue with all dependencies resolved, reads the PRD and ADRs, scans the codebase, delegates implementation to a sub-agent, reviews the result, and opens a PR. Triggers on "work the next issue", "implement the next issue", "work issue <N>", or any request for autonomous issue execution. Optionally scoped to a feature label.
+argument-hint: "[feature-label]"
+version: 3.1.0
+allowed-tools: Bash(bash "${CLAUDE_SKILL_DIR}/*"), Bash(gh *), Bash(git *), Bash(cargo *), Read, Agent
 ---
 
 # Work Issue
@@ -10,37 +12,36 @@ Autonomously implement the next ready GitHub issue. Read the issue, read the PRD
 
 ## Step 1: Find the Next Ready Issue
 
-If a feature label was provided (e.g. `/work-issue <feature-name>`), filter to issues with that label. Otherwise, look at all open issues.
+Run the issue finder script. If a feature label was provided (e.g. `/work-issue <feature-name>`), pass it as an argument.
 
 ```bash
-# With feature label
-gh issue list --label "<feature-name>" --state open --json number,title,body,labels
-
-# Without
-gh issue list --state open --json number,title,body,labels
+bash "${CLAUDE_SKILL_DIR}/find-ready-issue.sh" [LABEL]
 ```
 
-For each open issue, check its **Dependencies** section. A dependency is unresolved if the referenced issue is still open:
+The script checks dependency resolution and returns JSON:
 
-```bash
-gh issue view <dep-issue-number> --json state
+```json
+{
+  "issue": {
+    "number": 3,
+    "title": "Implement widget parser",
+    "body": "## What This Accomplishes\n...",
+    "labels": ["feature-name"]
+  },
+  "dependencies": {
+    "checked": [
+      {"issue": 3, "deps": [], "ready": true}
+    ],
+    "selected": 3
+  }
+}
 ```
 
-Select the **lowest-numbered open issue where all dependencies are closed**. If no issues are ready (all have unresolved dependencies), report what's blocked:
+If the script exits non-zero, report the blocked issues to the user and stop.
 
-```
-No issues are ready to work.
+## Step 2: Read the PRD and ADRs
 
-Blocked:
-  #3 <title> — waiting on #1 (still open)
-  #4 <title> — waiting on #2 (still open)
-```
-
-Do not proceed until there is a ready issue.
-
-## Step 2: Read the Issue and PRD
-
-Read the full issue body. Every section matters:
+The issue body is available directly from `issue.body` in the script output. Every section matters:
 - **What This Accomplishes** — the intent
 - **Acceptance Criteria** — the exact conditions that must be true when you're done
 - **Out of Scope** — hard boundaries, do not cross them
@@ -48,7 +49,7 @@ Read the full issue body. Every section matters:
 - **Dependencies** — already resolved, but useful for understanding what exists
 - **Definition of Done** — the checklist you must satisfy before opening a PR
 
-Then read the referenced PRD (`docs/PRD/<feature-name>.md`). The PRD is the authoritative source of feature intent. Use it to resolve ambiguities in the issue and to ensure your implementation fits within the broader feature.
+Then read the referenced PRD (`docs/PRD/<feature-name>.md`). Find the feature name from the PRD Reference field in the issue body. The PRD is the authoritative source of feature intent. Use it to resolve ambiguities in the issue and to ensure your implementation fits within the broader feature.
 
 If the issue has an **Architectural Decisions** section, read every referenced ADR in `docs/ADR/`. These are binding constraints — they document deliberate choices with specific reasoning. Do not deviate from them. If an ADR conflicts with what seems like a better approach, follow the ADR and note the tension in your PR description.
 
@@ -69,12 +70,12 @@ The subagent prompt should include the full issue body and ask it to find and re
 
 Before spawning the implementation sub-agent, assemble all context into named variables. **Do not proceed to Step 5 until all variables are populated.**
 
-- **`ISSUE_BODY`** — the full issue body from Step 2
+- **`ISSUE_BODY`** — the full issue body from the script output
 - **`PRD_CONTENT`** — the full PRD content from Step 2
 - **`ADR_CONTENTS`** — concatenated ADR contents (or "No ADRs referenced in this issue.")
 - **`CODEBASE_FINDINGS`** — the Explore subagent's full report from Step 3
 - **`FEATURE_NAME`** — the feature label/name
-- **`ISSUE_NUMBER`** — the issue number
+- **`ISSUE_NUMBER`** — the issue number from the script output
 
 ## Step 5: Spawn the Implementation Sub-Agent
 
@@ -398,3 +399,9 @@ gh issue edit <issue-number> --add-label "blocked"
 **3. Report to the user** what the blocker is and what they need to decide.
 
 Do not make up answers to unresolvable ambiguities. Do not proceed past a genuine blocker. The draft PR and blocked label are the handoff mechanism.
+
+## Failure Modes
+
+- **Script exits non-zero**: report the blocked issues to the user and stop. The script lists which issues are waiting on which dependencies.
+- **PRD not found**: report the discrepancy between the feature name in the issue and what exists in `docs/PRD/`
+- **Review findings persist after two fix rounds**: report remaining issues to the user as a blocker

@@ -1,7 +1,8 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 3.0.0
+version: 3.1.0
+allowed-tools: Bash(bash "${CLAUDE_SKILL_DIR}/*"), Bash(gh *), Read, Agent
 ---
 
 # PR Review

@@ -2,7 +2,8 @@
 name: rust-doc
 description: Looks up Rust API documentation for crates, types, traits, and functions. ALWAYS use instead of WebFetch for docs.rs or doc.rust-lang.org. Triggers when checking method signatures, trait bounds, crate exports, or any Rust API details. Also triggers on "look up docs for", "what methods does X have", "how do I use <crate>". Do not guess Rust APIs — use this skill to look them up.
 argument-hint: "[list|lookup] [remote] <crate::path::Item>"
-version: 3.0.0
+version: 3.1.0
+allowed-tools: Bash(bash "${CLAUDE_SKILL_DIR}/*")
 ---
 
 # Rust Doc Lookup
