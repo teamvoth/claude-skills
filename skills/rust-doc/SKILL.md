@@ -1,12 +1,13 @@
 ---
 name: rust-doc
-description: ALWAYS use this skill instead of WebFetch when working in a Rust project and you need to check how a crate's API works, what methods a type has, what traits to implement, what a function's signature is, or what a crate exports. Trigger when you are about to look up docs.rs, doc.rust-lang.org/std, or any Rust API reference. Trigger when writing Rust code and you are unsure of the exact API — do not guess, look it up. Also trigger when the user asks to "look up docs for", "check the API of", "what methods does X have", or "how do I use <crate>". Supports local dependencies (version-pinned from Cargo.lock) and remote crates (fetched from docs.rs).
-version: 2.0.0
+description: Looks up Rust API documentation for crates, types, traits, and functions. ALWAYS use instead of WebFetch for docs.rs or doc.rust-lang.org. Triggers when checking method signatures, trait bounds, crate exports, or any Rust API details. Also triggers on "look up docs for", "what methods does X have", "how do I use <crate>". Do not guess Rust APIs — use this skill to look them up.
+argument-hint: "[list|lookup] [remote] <crate::path::Item>"
+version: 3.0.0
 ---
 
 # Rust Doc Lookup
 
-Look up Rust API documentation from locally generated docs or from docs.rs. Local mode produces version-pinned documentation matching the project's `Cargo.lock`. Remote mode fetches the latest docs from docs.rs for crates not yet added as dependencies.
+Looks up Rust API documentation from locally generated docs or from docs.rs. Local mode produces version-pinned documentation matching the project's `Cargo.lock`. Remote mode fetches the latest docs from docs.rs for crates not yet added as dependencies.
 
 **Always use this instead of WebFetch for Rust API documentation.**
 
@@ -17,20 +18,20 @@ For crates that are already dependencies. Run from the root of a Rust project (w
 ### List crate exports
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" list <crate>
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" list <crate>
 ```
 
 ### Look up a specific item
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" lookup <crate::path::Item>
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" lookup <crate::path::Item>
 ```
 
 Examples:
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" lookup serde::Deserialize
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" lookup anyhow::Error
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" lookup tokio::sync::Mutex
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" lookup serde::Deserialize
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" lookup anyhow::Error
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" lookup tokio::sync::Mutex
 ```
 
 ## Remote Mode
@@ -40,19 +41,19 @@ For crates not yet in the project's dependencies. Fetches from docs.rs and cache
 ### List remote crate exports
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" remote list <crate>
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" remote list <crate>
 ```
 
 ### Look up a remote item
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" remote lookup <crate::path::Item>
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" remote lookup <crate::path::Item>
 ```
 
 Examples:
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" remote list sqlx
-bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" remote lookup sqlx::PgPool
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" remote list sqlx
+bash "${CLAUDE_SKILL_DIR}/rust-doc.sh" remote lookup sqlx::PgPool
 ```
 
 ## Behavior
@@ -64,9 +65,10 @@ bash "${CLAUDE_PLUGIN_ROOT}/skills/rust-doc/rust-doc.sh" remote lookup sqlx::PgP
 
 ## When to use
 
-- Looking up method signatures, trait bounds, or type definitions for dependencies (local mode)
+- Looking up method signatures, trait bounds, or type definitions for dependencies
 - Evaluating a crate's API surface before adding it as a dependency (remote mode)
 - Understanding API contracts (parameter types, return types, error types)
+- Any time Rust API details are needed — do not guess, look them up
 
 ## When NOT to use
 
