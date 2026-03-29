@@ -1,6 +1,6 @@
 ---
 name: rust-doc
-description: Use this skill when you need to look up Rust API documentation — types, traits, functions, method signatures, or crate exports. Works for local dependencies (version-pinned) and remote crates (from docs.rs). Use instead of WebFetch for docs.rs or doc.rust-lang.org.
+description: ALWAYS use this skill instead of WebFetch when working in a Rust project and you need to check how a crate's API works, what methods a type has, what traits to implement, what a function's signature is, or what a crate exports. Trigger when you are about to look up docs.rs, doc.rust-lang.org/std, or any Rust API reference. Trigger when writing Rust code and you are unsure of the exact API — do not guess, look it up. Also trigger when the user asks to "look up docs for", "check the API of", "what methods does X have", or "how do I use <crate>". Supports local dependencies (version-pinned from Cargo.lock) and remote crates (fetched from docs.rs).
 version: 2.0.0
 ---
 
