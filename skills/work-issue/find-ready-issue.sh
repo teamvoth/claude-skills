@@ -46,15 +46,17 @@ ISSUES_JSON=$(echo "$ISSUES_JSON" | jq 'sort_by(.number)')
 
 # --- Dependency resolution ---
 
-# Cache issue states to avoid redundant API calls
-declare -A STATE_CACHE
+# Cache issue states to avoid redundant API calls (file-based for bash 3 compat)
+STATE_CACHE_DIR=$(mktemp -d)
+trap 'rm -rf "$STATE_CACHE_DIR"' EXIT
 
 check_state() {
   local num=$1
-  if [[ -z "${STATE_CACHE[$num]+x}" ]]; then
-    STATE_CACHE[$num]=$(gh issue view "$num" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+  local cache_file="$STATE_CACHE_DIR/$num"
+  if [[ ! -f "$cache_file" ]]; then
+    gh issue view "$num" --json state --jq '.state' 2>/dev/null > "$cache_file" || echo "UNKNOWN" > "$cache_file"
   fi
-  echo "${STATE_CACHE[$num]}"
+  cat "$cache_file"
 }
 
 SELECTED_INDEX=""
