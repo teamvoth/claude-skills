@@ -2,8 +2,8 @@
 name: work-issue
 description: Autonomously implements the next ready GitHub issue. Picks up the lowest-numbered open issue with all dependencies resolved, reads the PRD and ADRs, scans the codebase, delegates implementation to a sub-agent, reviews the result, and opens a PR. Triggers on "work the next issue", "implement the next issue", "work issue <N>", or any request for autonomous issue execution. Optionally scoped to a feature label.
 argument-hint: "[feature-label]"
-version: 4.0.0
-allowed-tools: Bash(bash "${CLAUDE_SKILL_DIR}/*"), Bash(gh *), Bash(git *), Bash(cargo *), Read, Agent
+version: 4.1.0
+allowed-tools: Bash(bash *find-ready-issue.sh*), Bash(gh *), Bash(git *), Bash(cargo *), Read, Agent
 ---
 
 # Work Issue
@@ -20,12 +20,18 @@ bash "${CLAUDE_SKILL_DIR}/find-ready-issue.sh" [LABEL]
 
 The script returns JSON with the issue body, feature name, PRD path (with existence check), ADR paths (with existence checks), and dependency audit trail. If it exits non-zero, report the blocked issues to the user and stop.
 
-Using the script output:
-- **`ISSUE_BODY`** — from `issue.body`
-- **`ISSUE_NUMBER`** — from `issue.number`
-- **`FEATURE_NAME`** — from `context.featureName`
-- **`PRD_CONTENT`** — read the file at `context.prd.path` if `context.prd.exists` is true. If false, set to `"PRD not found at <path>."` and note the discrepancy.
-- **`ADR_CONTENTS`** — for each entry in `context.adrs` where `exists` is true, read the file and concatenate with `--- ADR: <path> ---` headers. If no ADRs, set to `"No ADRs referenced."`
+Extract **`ISSUE_NUMBER`**, **`ISSUE_BODY`**, and **`FEATURE_NAME`** from the script output.
+
+**Checkout the feature branch before reading PRD/ADR files** — those files live on the feature branch, not main:
+
+```bash
+git checkout feature/<FEATURE_NAME>
+git pull
+```
+
+Now resolve the remaining context:
+- **`PRD_CONTENT`** — read the file at `context.prd.path`. If the file does not exist, set to `"PRD not found at <path>."` and note the discrepancy.
+- **`ADR_CONTENTS`** — for each entry in `context.adrs`, read the file and concatenate with `--- ADR: <path> ---` headers. If no ADRs referenced, set to `"No ADRs referenced."`
 
 ## Step 2: Scan the Codebase
 
@@ -40,11 +46,9 @@ Save its report as **`CODEBASE_FINDINGS`**. Do not re-scan the codebase yourself
 
 ## Step 3: Implement
 
-Create the working branch:
+Create the task branch from the feature branch (already checked out in Step 1):
 
 ```bash
-git checkout feature/<FEATURE_NAME>
-git pull
 git checkout -b task/<ISSUE_NUMBER>
 ```
 
