@@ -1,41 +1,41 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 2.0.0
+version: 3.0.0
 ---
 
 # PR Review
 
 Evaluate a pull request by spawning six focused specialist sub-agents in parallel, each reviewing one dimension deeply. Aggregate their verdicts against CI status to make the final merge or block decision.
 
-## Step 1: Identify the PR
+## Step 1: Collect PR Context
 
-If a PR number was provided, use it. Otherwise, find the most recent open PR on the current feature branch:
-
-```bash
-gh pr list --state open --json number,title,headRefName,baseRefName
-```
-
-Fetch the full PR details:
+Run the context collection script. If a PR number was provided as an argument, pass it; otherwise let the script discover from the current branch.
 
 ```bash
-gh pr view <number> --json number,title,body,headRefName,baseRefName,isDraft
+bash "${CLAUDE_PLUGIN_ROOT}/skills/pr-review/collect-context.sh" [PR_NUMBER]
 ```
 
-Extract the linked issue number from the PR body (`Closes #N`). If no issue is linked, flag it — every PR in this workflow must link to an issue. Do not proceed.
+The script validates the PR (not draft, has linked issue) and returns JSON:
 
-If the PR is a draft, comment that it must be marked ready for review first. Do not proceed.
+```json
+{
+  "pr": { "number": 42, "title": "...", "headRef": "...", "baseRef": "..." },
+  "issueNumber": 17,
+  "diff": { "file": "/tmp/pr-review-42.diff", "lines": 350 }
+}
+```
 
-## Step 2: Collect All Context Into Named Variables
+If the script exits non-zero, report the error to the user and stop.
 
-Fetch each piece of context below and hold it in memory under the given name. **Do not spawn any sub-agents until all variables are populated.**
+## Step 2: Gather Remaining Context
 
-- **`ISSUE_BODY`** — `gh issue view <N> --json title,body`
-- **`PRD_CONTENT`** — Read `docs/PRD/<feature-name>.md` (find the feature name from the PRD Reference field in the issue body). If the file does not exist, set `PRD_CONTENT = "PRD not found — file docs/PRD/<feature-name>.md is missing."` and note the discrepancy.
+Using the script output, fetch each piece of context below and hold it in memory. **Do not spawn sub-agents until all variables are populated.**
+
+- **`ISSUE_BODY`** — `gh issue view <issueNumber> --json title,body`
+- **`PRD_CONTENT`** — Find the feature name from the PRD Reference field in the issue body. Read `docs/PRD/<feature-name>.md`. If the file does not exist, set `PRD_CONTENT = "PRD not found — file docs/PRD/<feature-name>.md is missing."` and note the discrepancy.
 - **`ADR_CONTENTS`** — Find the Architectural Decisions section in the issue body. For each referenced ADR, read `docs/ADR/<NNNN>-<slug>.md` and concatenate with a `--- ADR: <filename> ---` header. If no ADRs are referenced, set `ADR_CONTENTS = "No ADRs referenced in this issue."`
-- **`PR_DIFF`** — `gh pr diff <number>`. Save the diff once and use the Read tool to examine sections. Do not pipe `gh pr diff` through shell commands (`grep`, `awk`, `sed`) repeatedly.
-
-If the diff is large, pass it in full. Do not truncate — truncation causes missed findings.
+- **`PR_DIFF`** — Read the diff file from the path in the script output. The diff excludes lock files and generated artifacts. If the diff is large, pass it in full to sub-agents. Do not truncate — truncation causes missed findings.
 
 ## Step 3: Spawn Six Parallel Sub-Agent Reviewers
 
@@ -195,7 +195,7 @@ DIFF:
 ---
 ```
 
-Replace `<number>`, `<title>`, `<ISSUE_BODY>`, `<PRD_CONTENT>`, `<ADR_CONTENTS>`, and `<PR_DIFF>` with the full text collected in Step 2. Inline the content — do not reference it abstractly.
+Replace `<number>`, `<title>`, `<ISSUE_BODY>`, `<PRD_CONTENT>`, `<ADR_CONTENTS>`, and `<PR_DIFF>` with the full text collected in Steps 1-2. Inline the content — do not reference it abstractly.
 
 ## Step 4: Check CI
 
@@ -294,7 +294,6 @@ Do not merge a PR with any open FAIL or WARN findings. Do not approve without me
 
 ## Failure Modes
 
-- **No linked issue**: comment asking for an issue link, do not review further
+- **Script exits non-zero**: report the error message to the user and stop. Common causes: no open PR on current branch, PR is a draft, no linked issue, linked issue doesn't exist.
 - **PRD not found**: report the discrepancy between the feature name in the issue and what exists in `docs/PRD/`
-- **Draft PR**: do not merge; comment that it needs to be marked ready for review first
 - **Agent returns malformed output**: re-invoke that single agent with a correction prompt before proceeding; do not guess at its verdict
