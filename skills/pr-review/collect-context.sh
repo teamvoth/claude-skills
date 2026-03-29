@@ -88,14 +88,25 @@ EXCLUDE_PATTERNS=(
   '*.map'
 )
 
-# Build the pathspec exclude args for gh pr diff (passed through to git diff)
-EXCLUDE_ARGS=()
-for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-  EXCLUDE_ARGS+=(":(exclude)$pattern")
-done
+# Fetch full diff, then filter out excluded file sections with awk
+DIFF_RAW=$(mktemp)
+gh pr diff "$PR_NUMBER" > "$DIFF_RAW" 2>/dev/null \
+  || { rm -f "$DIFF_RAW"; die "Failed to fetch diff for PR #$PR_NUMBER."; }
 
-gh pr diff "$PR_NUMBER" -- "${EXCLUDE_ARGS[@]}" > "$DIFF_FILE" 2>/dev/null \
-  || die "Failed to fetch diff for PR #$PR_NUMBER."
+# Convert glob patterns to a pipe-delimited string for awk, turning * into .*
+PATTERN_RE=$(printf '%s\n' "${EXCLUDE_PATTERNS[@]}" | sed 's/\./\\./g; s/\*/.*/g' | paste -sd'|' -)
+
+awk -v patterns="$PATTERN_RE" '
+  BEGIN { split(patterns, pats, "|"); skip=0 }
+  /^diff --git/ {
+    skip=0
+    for (i in pats) {
+      if ($0 ~ pats[i]) { skip=1; break }
+    }
+  }
+  !skip { print }
+' "$DIFF_RAW" > "$DIFF_FILE"
+rm -f "$DIFF_RAW"
 
 DIFF_LINES=$(wc -l < "$DIFF_FILE" | tr -d ' ')
 
