@@ -47,8 +47,10 @@ Fix warnings that are clearly correct and low-risk. For subjective warnings or t
 ### Any FAIL → fix and re-review
 
 For each blocking finding:
-1. Understand what the reviewer flagged and why
-2. Fix the issue
-3. Re-run the full test suite to confirm nothing broke
+1. **Read** the finding. Identify the specific file, line, and condition the reviewer flagged.
+2. **Understand** why it was flagged — what invariant or requirement does it violate?
+3. **Fix** the issue. If the fix is non-obvious, follow the [debugging-protocol.md](debugging-protocol.md) — state your hypothesis, make a single-variable change.
+4. **Verify the specific finding** — re-check the exact condition the reviewer described. Can you still reproduce the problem? If yes, the fix is incomplete — return to step 3.
+5. **Run the full test suite** to confirm no regressions.
 
-After fixing all blocking findings, re-run all three review sub-agents on the updated diff. If new FAILs appear, fix those too. Do not loop more than twice — if findings persist after two fix rounds, report remaining issues to the user as a blocker.
+After all findings are individually verified as resolved, re-run all three review sub-agents on the updated diff. If new FAILs appear, fix those too. Do not loop more than twice — if findings persist after two fix rounds, report remaining issues to the user as a blocker.

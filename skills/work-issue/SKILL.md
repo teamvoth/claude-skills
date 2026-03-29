@@ -54,16 +54,17 @@ git checkout -b task/<ISSUE_NUMBER>
 
 Read [prompts/implementation-agent.md](prompts/implementation-agent.md). Spawn a single implementation sub-agent with that prompt, appending a context block built from the [templates/context-block.md](templates/context-block.md) template with `CODEBASE_FINDINGS` added after the ADR section.
 
-Wait for it to return before proceeding.
+Wait for it to return. Validate that its response includes a numbered task plan — if the first output is code without a plan, re-invoke with a correction prompt requiring the plan first.
 
-## Step 4: Run Tests
+## Step 4: Verify Tests
 
 This is a gate you own — do not delegate it.
 
-- Identify the project's test runner (check `package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, or equivalent)
-- Run the **full** test suite, not just new tests. Changes must not break existing tests
-- If any test fails, fix and re-run. Do not proceed with failing tests
-- Save the test output for the PR description
+1. Identify the project's test runner (check `package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, or equivalent)
+2. Run the **full** test suite and capture the complete output
+3. Parse the output for the final summary line (e.g., `test result: ok. 12 passed; 0 failed`). Extract the actual pass/fail counts
+4. **Gate**: if fail count > 0, follow the debugging protocol at [prompts/debugging-protocol.md](prompts/debugging-protocol.md). Maximum 3 fix cycles before escalating to the user as a blocker using the [templates/blocked-pr-body.md](templates/blocked-pr-body.md) template
+5. When all tests pass, save the **exact test runner summary line** for the PR body — not a paraphrase, the actual output
 
 ## Step 5: Review
 

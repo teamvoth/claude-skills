@@ -75,6 +75,18 @@ Order issues by logical implementation sequence. If an issue depends on code fro
 
 Think through each issue before creating any — gaps in the issue body become gaps in the implementation. Every ADR that constrains an issue must be referenced in that issue's body.
 
+## Step 4.5: Validate the Decomposition
+
+Before creating any issues, verify the slice plan against these criteria:
+
+- **Coverage**: every acceptance criterion in the PRD is mapped to exactly one issue. List any orphaned criteria — if found, add an issue for them or merge into an existing slice.
+- **Atomicity**: each issue is independently implementable and testable. If issue N requires partial code from issue M to compile, they should be merged or resequenced.
+- **Dependency soundness**: the dependency chain is a DAG with no cycles. Each dependency is justified by a code dependency, not just conceptual ordering.
+- **Scope containment**: the union of all issue scopes does not exceed the PRD scope. No issue introduces work not traceable to a PRD requirement.
+- **Test scenario completeness**: each issue has at least one test scenario per acceptance criterion, and each scenario has concrete Input/Setup, Action, and Expected Result — no placeholders or TBDs.
+
+Fix the decomposition before creating issues. Do not create issues with known gaps.
+
 ## Step 5: Create Issues
 
 Ensure the feature label exists:
