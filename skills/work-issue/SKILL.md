@@ -52,9 +52,17 @@ Create the task branch from the feature branch (already checked out in Step 1):
 git checkout -b task/<ISSUE_NUMBER>
 ```
 
-Read [prompts/implementation-agent.md](prompts/implementation-agent.md). Spawn a single implementation sub-agent with that prompt, appending a context block built from the [templates/context-block.md](templates/context-block.md) template with `CODEBASE_FINDINGS` added after the ADR section.
+Spawn a single implementation sub-agent with the prompt below, appending a context block with `CODEBASE_FINDINGS` added after the ADR section.
 
-Wait for it to return. Validate that its response includes a numbered task plan — if the first output is code without a plan, re-invoke with a correction prompt requiring the plan first.
+### Implementation Agent Prompt
+
+!`cat "${CLAUDE_SKILL_DIR}/prompts/implementation-agent.md"`
+
+### Context Block Template
+
+!`cat "${CLAUDE_SKILL_DIR}/templates/context-block.md"`
+
+Wait for the agent to return. Validate that its response includes a numbered task plan — if the first output is code without a plan, re-invoke with a correction prompt requiring the plan first.
 
 ## Step 4: Verify Tests
 
@@ -63,16 +71,24 @@ This is a gate you own — do not delegate it.
 1. Identify the project's test runner (check `package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, or equivalent)
 2. Run the **full** test suite and capture the complete output
 3. Parse the output for the final summary line (e.g., `test result: ok. 12 passed; 0 failed`). Extract the actual pass/fail counts
-4. **Gate**: if fail count > 0, follow the debugging protocol at [prompts/debugging-protocol.md](prompts/debugging-protocol.md). Maximum 3 fix cycles before escalating to the user as a blocker using the [templates/blocked-pr-body.md](templates/blocked-pr-body.md) template
+4. **Gate**: if fail count > 0, follow the debugging protocol below. Maximum 3 fix cycles before escalating to the user as a blocker
 5. When all tests pass, save the **exact test runner summary line** for the PR body — not a paraphrase, the actual output
+
+### Debugging Protocol
+
+!`cat "${CLAUDE_SKILL_DIR}/prompts/debugging-protocol.md"`
 
 ## Step 5: Review
 
-Read [prompts/review-phase.md](prompts/review-phase.md) and follow its instructions to spawn three parallel review sub-agents and evaluate their results. The review phase file references its own sub-files for each reviewer's scope.
+Follow the review phase instructions below to spawn three parallel review sub-agents and evaluate their results.
+
+!`cat "${CLAUDE_SKILL_DIR}/prompts/review-phase.md"`
 
 ## Step 6: Open the PR
 
-Push and open a PR targeting the feature branch. Use [templates/pr-body.md](templates/pr-body.md) as the structure for the PR body:
+Push and open a PR targeting the feature branch. Use this template for the PR body:
+
+!`cat "${CLAUDE_SKILL_DIR}/templates/pr-body.md"`
 
 ```bash
 git add <specific files>
@@ -91,7 +107,9 @@ Fill in the test coverage table (mapping acceptance criteria → scenarios → t
 
 If you hit something that prevents full implementation — ambiguity not resolvable from the issue/PRD, code conflicts, impossible acceptance criteria, or missing dependencies:
 
-1. **Create a draft PR** using the [templates/blocked-pr-body.md](templates/blocked-pr-body.md) template:
+1. **Create a draft PR** using this template:
+
+!`cat "${CLAUDE_SKILL_DIR}/templates/blocked-pr-body.md"`
 
 ```bash
 gh pr create \
