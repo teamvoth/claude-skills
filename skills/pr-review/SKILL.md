@@ -78,13 +78,31 @@ Do not summarize the PR beyond what is needed to explain your findings.
 
 Scope instruction:
 ```
-Evaluate this PR exclusively for security vulnerabilities. Check:
-(1) OWASP Top 10: injection (SQL, command, template, path traversal), broken auth, XSS, IDOR, security misconfiguration, sensitive data exposure, use of components with known vulnerabilities
-(2) Hardcoded secrets, credentials, API keys, tokens, or environment values committed in code or tests
-(3) Authentication and authorization: are protected resources actually protected, are permission checks present where the code implies they should be
-(4) Input validation: is user-supplied data validated before use
+Evaluate this PR exclusively for security vulnerabilities across three domains: traditional application security, LLM application risks, and agentic system risks.
 
-If the diff contains no user-facing input or external data handling, state that explicitly and return PASS.
+DOMAIN 1 — Traditional Application Security (OWASP Top 10):
+(1) Injection: SQL, command, template, path traversal
+(2) Broken authentication and authorization: are protected resources actually protected, are permission checks present
+(3) XSS, IDOR, security misconfiguration, sensitive data exposure
+(4) Hardcoded secrets, credentials, API keys, tokens, or environment values in code or tests
+(5) Input validation: is user-supplied data validated before use
+(6) Use of components with known vulnerabilities
+
+DOMAIN 2 — LLM Application Risks (OWASP LLM Top 10):
+(7) Prompt injection: is untrusted content (user input, retrieved documents, external data) concatenated into prompts without sanitization or delimiter isolation
+(8) Sensitive information disclosure: could the LLM leak secrets, PII, or system prompts through its outputs
+(9) Improper output handling: is LLM output passed to downstream systems (SQL, shell, HTML, APIs) without validation or encoding
+(10) Excessive agency: are tool permissions broader than necessary, are destructive operations available without confirmation gates
+(11) Supply chain: are third-party models, plugins, MCP servers, or prompt templates loaded without integrity verification
+
+DOMAIN 3 — Agentic System Risks (OWASP Agentic Top 10 + Rule of Two):
+(12) Rule of Two violation: does any code path allow an agent to simultaneously [A] process untrusted input, [B] access sensitive data, AND [C] take external actions? If all three properties are present without a human-in-the-loop gate, this is a FAIL. Any two of the three is acceptable
+(13) Tool misuse: can tools be chained in sequences that produce harmful outcomes even though each individual call is authorized (e.g., read file + send email = data exfiltration)
+(14) Memory/context poisoning: can untrusted content write to persistent agent memory, RAG indexes, or shared state that affects future sessions
+(15) Identity and privilege: does the agent operate with its own broad permissions rather than the requesting user's scoped permissions
+(16) Cascading failures: can one agent's bad output propagate unchecked through a multi-agent pipeline
+
+If the diff contains no user-facing input, LLM integration, or agentic behavior, state which domains were checked and which were not applicable, and return PASS.
 ```
 
 ---
