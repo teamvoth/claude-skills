@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pre-commit hook: warn if skills/ files changed but plugin.json version wasn't bumped.
+
+PLUGIN_JSON=".claude-plugin/plugin.json"
+
+# Check if any skills/ files are staged
+SKILLS_CHANGED=$(git diff --cached --name-only -- 'skills/' | head -1)
+
+if [[ -z "$SKILLS_CHANGED" ]]; then
+  exit 0  # No skill changes, nothing to check
+fi
+
+# Check if plugin.json version was also changed
+VERSION_BUMPED=$(git diff --cached -- "$PLUGIN_JSON" | grep '^+.*"version"' | head -1)
+
+if [[ -z "$VERSION_BUMPED" ]]; then
+  echo ""
+  echo "WARNING: skills/ files changed but $PLUGIN_JSON version was not bumped."
+  echo "The plugin won't update for users until the version is incremented."
+  echo ""
+  echo "To bump: edit .claude-plugin/plugin.json and increment the version field."
+  echo "To skip this check: git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+exit 0
