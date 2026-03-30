@@ -1,11 +1,11 @@
 {
   "name": "claude-skills",
-  "version": "1.0.0",
-  "description": "Structured feature development skills: requirements gathering, PRD creation, GitHub issue breakdown, autonomous implementation, PR workflows, and repo setup.",
+  "version": "2.0.0",
+  "description": "Structured feature development skills: requirements gathering, PRD creation, GitHub issue breakdown, autonomous implementation, PR workflows, repo setup, and Rust documentation lookup.",
   "author": {
-    "name": "bradvoth"
+    "name": "teamvoth"
   },
-  "repository": "https://github.com/bradvoth/claude-skills",
+  "repository": "https://github.com/teamvoth/claude-skills",
   "license": "UNLICENSED",
   "keywords": ["prd", "github", "workflow", "feature-development", "skills", "pr-review"]
 }
