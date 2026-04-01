@@ -40,7 +40,21 @@ Build a decision table from the three reports:
 
 ### All PASS → proceed to PR
 
-### Any WARN (no FAIL) → fix or note
+### Any REDESIGN → stop and escalate
+
+If any reviewer returns REDESIGN, do not attempt to fix the code. The review has identified a problem that lives in the design, not the implementation.
+
+1. Push the current branch as-is
+2. Open a **draft PR** with the REDESIGN findings in the body
+3. Label the issue as needing redesign:
+   ```bash
+   gh label create "needs-redesign" --color "#7057ff" --description "Design artifact needs revisiting" 2>/dev/null || true
+   gh issue edit <ISSUE_NUMBER> --add-label "needs-redesign"
+   ```
+4. Comment on the issue with the architectural concern and which design artifact (issue, ADR, or PRD) needs revisiting
+5. Report to the user and stop — do not continue to the PR step
+
+### Any WARN (no FAIL, no REDESIGN) → fix or note
 
 Fix warnings that are clearly correct and low-risk. For subjective warnings or those requiring significant rework, note them in the PR description as known observations. Then proceed to PR.
 

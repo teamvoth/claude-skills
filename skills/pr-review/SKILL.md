@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 3.3.0
+version: 3.4.0
 allowed-tools: Bash(bash *collect-context.sh*), Bash(gh *), Read, Agent
 ---
 
@@ -60,12 +60,13 @@ Return your findings in EXACTLY this format:
 
 ## [AGENT NAME] Review
 
-**Verdict**: PASS | FAIL | WARN
-(PASS = no issues; FAIL = blocking issues that must be fixed before merge; WARN = non-blocking observations worth noting)
+**Verdict**: PASS | FAIL | WARN | REDESIGN
+(PASS = no issues; FAIL = blocking issues that must be fixed before merge; WARN = non-blocking observations worth noting; REDESIGN = the implementation reveals a fundamental design problem that cannot be fixed by changing code in this PR — the issue, ADR, or PRD needs to be revisited)
 
 **Findings**:
 [If PASS: one sentence confirming what you checked and that it passed.]
 [If FAIL or WARN: numbered list. For each finding: (1) what the issue is, (2) where — file name and line number if applicable, (3) why it matters.]
+[If REDESIGN: (1) what the architectural problem is, (2) which design artifact (issue, ADR, or PRD) needs revisiting, (3) what specific question or decision needs to be reconsidered, (4) why a code fix is insufficient.]
 
 **Blocking Issues**: N | **Warnings**: N
 
@@ -248,9 +249,11 @@ Collect the six agent reports. Build a decision table:
 | Performance & Reliability | | | |
 | CI | | — | — |
 
-**Merge if and only if**: all six agents returned PASS (zero FAILs, zero WARNs) AND CI is passing.
+**Merge if and only if**: all six agents returned PASS (zero FAILs, zero WARNs, zero REDESIGNs) AND CI is passing.
 
-**Request changes if**: any agent returned FAIL or WARN, OR CI is failing with a code failure (not an infra flake).
+**Escalate if**: any agent returned REDESIGN. Do not request changes or merge. Comment on the PR with the REDESIGN findings, identify which design artifact (issue, ADR, or PRD) needs revisiting, and report to the user. A REDESIGN means the review found a problem that cannot be resolved by changing the PR — the upstream design needs to change first.
+
+**Request changes if**: any agent returned FAIL or WARN (and no REDESIGN), OR CI is failing with a code failure (not an infra flake).
 
 **Wait**: if CI is still pending, use `gh run watch` to wait for completion before deciding.
 
