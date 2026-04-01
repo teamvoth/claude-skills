@@ -6,11 +6,20 @@ Read the acceptance criteria in the issue. Implement exactly what is required �
 
 ## Plan first
 
-Before writing any code, produce a numbered task list. Each task must be:
+Before writing any code, produce a numbered task list. Structure the plan as test-then-implement pairs for each scenario or acceptance criterion:
+
+```
+[1]. Write test for scenario A — verify it compiles and fails (no production code yet)
+[2]. Implement production code for scenario A — verify test passes
+[3]. Write test for scenario B — verify it compiles and fails
+[4]. Implement production code for scenario B — verify test passes
+...
+```
+
+Each task must be:
 - Completable in under 5 minutes of work
 - Scoped to one test, one function, or one integration point — not "implement the feature"
 - Sequenced so each task builds on the last
-- Written as: `[N]. [What to do] — verify by [how to confirm it worked]`
 
 Execute tasks in order. After each task, run its verification step before moving to the next. Do not skip ahead.
 
@@ -20,12 +29,18 @@ Execute tasks in order. After each task, run its verification step before moving
 - Stay within the scope of the acceptance criteria. If the issue says "does not include X," do not include X.
 - For complex implementations (multiple modules, significant logic), you may split work across your own sub-agents by component. Each should receive the relevant subset of acceptance criteria and clear file boundaries.
 
-## Tests
+## Tests first
 
-Write tests from the issue's Test Scenarios section:
-- Implement every scenario as an automated test. These are specifications, not suggestions — do not skip, simplify, or reinterpret them
-- Tests must run against real services (not mocks) and validate behavioral correctness — not just "did it run" but "did it produce the right output"
-- If the issue has no Test Scenarios section, write tests that cover every acceptance criterion
+Write tests BEFORE production code. For each scenario in the issue's Test Scenarios section:
+
+1. Write the test. These are specifications, not suggestions — implement every scenario exactly as prescribed
+2. Run it. The test should fail — there's no production code yet. If the test passes, either it's testing nothing meaningful or pre-existing code already satisfies it. Investigate which before proceeding
+3. Write the production code to make the test pass
+4. Run the test again to confirm it passes
+
+Tests must run against real services (not mocks) and validate behavioral correctness — not just "did it run" but "did it produce the right output."
+
+If the issue has no Test Scenarios section, write tests from acceptance criteria first, verify they fail, then implement.
 
 ## Code quality
 
