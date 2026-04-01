@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 3.4.0
+version: 3.5.0
 allowed-tools: Bash(bash *collect-context.sh*), Bash(gh *), Read, Agent
 ---
 
@@ -36,7 +36,24 @@ Using the script output, fetch each piece of context below and hold it in memory
 - **`ISSUE_BODY`** — Available directly from `issue.body` in the script output.
 - **`PRD_CONTENT`** — Find the feature name from the PRD Reference field in the issue body. Read `docs/PRD/<feature-name>.md`. If the file does not exist, set `PRD_CONTENT = "PRD not found — file docs/PRD/<feature-name>.md is missing."` and note the discrepancy.
 - **`ADR_CONTENTS`** — Find the Architectural Decisions section in the issue body. For each referenced ADR, read `docs/ADR/<NNNN>-<slug>.md` and concatenate with a `--- ADR: <filename> ---` header. If no ADRs are referenced, set `ADR_CONTENTS = "No ADRs referenced in this issue."`
-- **`PR_DIFF`** — Read the diff file from the path in the script output. The diff excludes lock files and generated artifacts. If the diff is large, pass it in full to sub-agents. Do not truncate — truncation causes missed findings.
+- **`PR_DIFF`** — Read the diff file from the path in the script output. The diff excludes lock files and generated artifacts.
+
+## Step 2.5: Prepare Per-Reviewer Context
+
+Each reviewer gets a tailored context block — not the full dump. Prepare filtered context for each:
+
+| Reviewer | Diff | PRD | ADRs | Issue |
+|---|---|---|---|---|
+| **Security** | Production code only | Compressed: quality attributes + out-of-scope | Relevant ADRs only | Full |
+| **Test Scenario Compliance** | Test code + referenced production code | Not needed | Not needed | Full |
+| **Test Coverage & Quality** | Test code + production code | Compressed: acceptance criteria + quality attributes | Not needed | Full |
+| **Task Compliance** | Full diff | Full PRD | All ADRs | Full |
+| **Architecture & Standards** | Production code + config files | Compressed: quality attributes + out-of-scope | All ADRs | Full |
+| **Performance & Reliability** | Production code only | Compressed: quality attributes only | Not needed | Full |
+
+**Filtering the diff:** Split by file path. Production code = non-test source files. Test code = files matching test naming conventions for the project (e.g., `*_test.go`, `*.test.ts`, `test_*.py`, `tests/`). Config = build configs, CI files, manifests. If uncertain whether a file is test or production, include it in both contexts.
+
+**Compressing the PRD:** Extract only the sections listed in the table. "Compressed" means dropping Overview, Goals, User Stories/Functional Requirements, and Open Questions — keeping Acceptance Criteria, Out of Scope, and Quality Attributes as applicable.
 
 ## Step 3: Spawn Six Parallel Sub-Agent Reviewers
 
@@ -45,7 +62,7 @@ Using the script output, fetch each piece of context below and hold it in memory
 Each agent prompt must include three parts in order:
 1. The shared output format preamble (below)
 2. The agent's specific scope instruction (below)
-3. The full context block (below)
+3. The per-reviewer context block prepared in Step 2.5
 
 ---
 
@@ -223,7 +240,7 @@ DIFF:
 ---
 ```
 
-Replace `<number>`, `<title>`, `<ISSUE_BODY>`, `<PRD_CONTENT>`, `<ADR_CONTENTS>`, and `<PR_DIFF>` with the full text collected in Steps 1-2. Inline the content — do not reference it abstractly.
+Replace each placeholder with the **per-reviewer filtered version** from Step 2.5 — not the full text. `<ISSUE_BODY>` is always full. `<PRD_CONTENT>`, `<ADR_CONTENTS>`, and `<PR_DIFF>` vary per reviewer as defined in the filtering table. Omit sections entirely (replace with "Not applicable for this review scope.") when the table shows "Not needed." Inline the content — do not reference it abstractly.
 
 ## Step 4: Check CI
 

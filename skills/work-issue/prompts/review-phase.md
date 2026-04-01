@@ -26,7 +26,21 @@ Generate the diff before spawning agents:
 git diff feature/<feature-name>...HEAD
 ```
 
-Include the full diff in each agent's context block as the `{{DIFF}}` value.
+## Context preparation
+
+Each reviewer gets a tailored context block — not the full dump. Before spawning agents, prepare filtered context for each reviewer:
+
+| Reviewer | Diff | PRD | ADRs | Issue |
+|---|---|---|---|---|
+| **Code Quality & Architecture** | Production code only (non-test source files) | Compressed: acceptance criteria + out-of-scope + quality attributes only | All ADRs | Full |
+| **Task Adherence** | Full diff | Full PRD | All ADRs | Full |
+| **Test Quality & Coverage** | Test code + the production code referenced by tests | Compressed: acceptance criteria + quality attributes only | Not needed | Full |
+
+**Filtering the diff:** Split by file path. Production code = non-test source files. Test code = files matching test naming conventions for the project (e.g., `*_test.go`, `*.test.ts`, `test_*.py`, `tests/`). If uncertain whether a file is test or production, include it in both reviewer contexts.
+
+**Compressing the PRD:** Extract only the Acceptance Criteria, Out of Scope, and Quality Attributes sections. Drop Overview, Goals, User Stories/Functional Requirements, and Open Questions.
+
+Use the [review-context-block.md](../templates/review-context-block.md) template for each, replacing placeholders with the filtered versions.
 
 ## Evaluating results
 
