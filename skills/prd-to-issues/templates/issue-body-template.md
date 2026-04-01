@@ -15,6 +15,17 @@ Full context, goals, and constraints for this feature are documented there.
 - [ ] [Criterion]
 - [ ] [Criterion]
 
+## Quality Constraints
+
+[Which quality attributes from the PRD apply to this specific issue, and what do they mean concretely for this slice? Not every PRD quality attribute applies to every issue — only include the ones that should shape implementation and review for *this* code.]
+
+[For each relevant attribute, state what it means in the context of this issue. Be specific enough that the implementor knows what to reason about and the reviewer knows what to verify.]
+
+- **[Category]**: [What this means for this issue. E.g., "This module parses untrusted input from external URLs — validate and sanitize before processing. Malformed input must produce a clear error, not a panic."]
+- **[Category]**: [E.g., "This is the hot path for stage execution — avoid unnecessary allocations in the per-stage loop. Clone only when ownership transfer is required."]
+
+[If no quality attributes from the PRD apply to this issue, write "None — this is a straightforward functional slice." This is a valid answer; not every slice has quality-sensitive code.]
+
 ## Test Scenarios
 
 [For each acceptance criterion above, write at least one concrete test scenario. These are the tests the implementor must write — not suggestions, specifications. Each scenario must be specific enough that two different implementors would write essentially the same test.]
@@ -58,5 +69,6 @@ Before opening a PR, confirm:
 - [ ] All acceptance criteria above are satisfied
 - [ ] Every test scenario in the Test Scenarios section has a corresponding automated test
 - [ ] All tests pass when run locally against real services (not mocks)
+- [ ] Quality constraints above are addressed (not just functional correctness)
 - [ ] No functionality outside the scope of this issue is added or modified
 - [ ] PR targets the `feature/{{feature-name}}` branch

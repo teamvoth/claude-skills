@@ -2,7 +2,7 @@
 name: prd-to-issues
 description: Decomposes a PRD into executable GitHub issues by identifying architectural decisions (recorded as ADRs), creating vertical slices mapped to acceptance criteria, and writing detailed issue bodies with test scenarios and dependencies. Triggers on "break down a PRD", "create issues from a PRD", "turn the PRD into tasks", or any request to move from planning to execution.
 argument-hint: "[feature-name]"
-version: 3.0.0
+version: 3.1.0
 allowed-tools: Bash(gh *), Bash(git *), Read, Glob, Grep
 ---
 
@@ -18,6 +18,7 @@ Locate the PRD. If the user specified a feature name, look at `docs/PRD/<feature
 
 Read the entire PRD before doing anything else. Pay close attention to:
 - **Acceptance criteria** — these map directly to issues
+- **Quality attributes** — these flow into per-issue quality constraints. For each issue, determine which quality attributes from the PRD apply to that specific slice, and what they mean concretely for that code
 - **Out of scope** — you'll need to reflect this at the issue level
 - **Functional requirements** — use these to add context and technical hints to each issue
 - **Open questions** — flag any that would block implementation
@@ -84,6 +85,7 @@ Before creating any issues, verify the slice plan against these criteria:
 - **Dependency soundness**: the dependency chain is a DAG with no cycles. Each dependency is justified by a code dependency, not just conceptual ordering.
 - **Scope containment**: the union of all issue scopes does not exceed the PRD scope. No issue introduces work not traceable to a PRD requirement.
 - **Test scenario completeness**: each issue has at least one test scenario per acceptance criterion, and each scenario has concrete Input/Setup, Action, and Expected Result — no placeholders or TBDs.
+- **Quality attribute coverage**: every quality attribute in the PRD is referenced by at least one issue's Quality Constraints section. If a quality attribute applies to no issue, either it's not relevant (remove from PRD) or an issue is missing coverage.
 
 Fix the decomposition before creating issues. Do not create issues with known gaps.
 

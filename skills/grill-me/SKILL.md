@@ -1,7 +1,7 @@
 ---
 name: grill-me
 description: Conducts a structured interview to surface unstated requirements and design decisions before implementation. Uses iterative AskUserQuestion calls to identify gaps, edge cases, and constraints that would cause rework if missed. Triggers on "grill me", "let's think this through", "clarify requirements", or proactively when a task involves design decisions that would be expensive to reverse. Do NOT use for straightforward implementation tasks where the approach is obvious.
-version: 2.1.0
+version: 2.2.0
 ---
 
 # Grill Me
@@ -31,6 +31,7 @@ Your first AskUserQuestion call should establish the foundation. Choose the most
 Based on each answer, formulate the next round of questions. Drill into:
 - Edge cases the user hasn't mentioned (what happens when X fails, when input is empty, when there are 10,000 items instead of 10?)
 - Constraints that would change the approach (performance, security, compatibility, reversibility)
+- Quality attributes that would shape implementation — what non-functional properties matter (performance, security, reliability, modularity, observability, testability) and why? Don't run through a generic checklist; reason about which attributes actually matter given what this feature does, and ask targeted questions about those.
 - Decisions that seem obvious but often aren't (ordering, priority, permissions, defaults)
 - The "and then what" — what happens after this feature exists and gets used?
 

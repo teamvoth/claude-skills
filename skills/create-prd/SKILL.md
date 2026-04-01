@@ -2,7 +2,7 @@
 name: create-prd
 description: Produces a Product Requirements Document for a feature by conducting a user interview (or using a completed grill-me session) and writing a structured PRD. Triggers on "create a PRD", "write a PRD", "document this feature", or when formalizing a feature before implementation.
 argument-hint: "[feature-name]"
-version: 2.0.0
+version: 2.1.0
 allowed-tools: Bash(git *), Read, Glob, Grep, Agent
 ---
 
@@ -38,6 +38,7 @@ For a PRD specifically, surface:
 - **Out of scope** — what are you explicitly *not* building?
 - **Edge cases and constraints** — what breaks the happy path? What are the hard limits?
 - **Functional behavior** — what does the product actually do, step by step, from the user's perspective?
+- **Quality attributes** — what non-functional properties matter and why? Ask about each only when relevant to the feature: performance constraints, security boundaries, reliability requirements, modularity expectations, observability needs, testability concerns. Don't run down a generic checklist — reason about which attributes actually matter given what the feature does, then ask targeted questions about those.
 
 When you have a complete picture, summarize it back and get explicit confirmation before writing.
 
