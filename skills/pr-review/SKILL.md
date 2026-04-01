@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 3.2.0
+version: 3.3.0
 allowed-tools: Bash(bash *collect-context.sh*), Bash(gh *), Read, Agent
 ---
 
@@ -176,6 +176,8 @@ Check:
 (2) Existing patterns: does the code follow the conventions visible in the diff context (naming, file organization, error handling style, module structure)
 (3) Code quality: dead code, unused imports, variables declared but never used, unreachable branches
 (4) Naming consistency: are names clear, accurate, and consistent with the surrounding codebase
+
+(5) Module boundaries: is the public API surface minimal (no internal types leaked)? Do dependencies flow in one direction (no circular imports)? Are boundaries placed at natural seams? Flag abstractions that exist for only a single call site — they add indirection without reuse value.
 
 If no ADRs were provided, state this and skip that check.
 ```

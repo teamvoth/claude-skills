@@ -2,7 +2,7 @@
 name: feature-pr
 description: Creates a pull request from a feature branch into main after verifying all quality gates — closed issues, PRD acceptance criteria, test coverage, and code quality. Triggers on "create the feature PR", "open a PR for the feature", "ship this feature", or any request to finalize a feature.
 argument-hint: "[feature-name]"
-version: 2.1.0
+version: 2.2.0
 allowed-tools: Bash(gh *), Bash(git *), Read, Glob, Grep
 ---
 
@@ -48,7 +48,9 @@ For each criterion: find the code that implements it, verify the implementation 
 
 Then verify each Quality Attribute from the PRD. For each attribute, find evidence across the feature codebase that the constraint is addressed. A quality attribute that no slice addresses is a gap — note exactly which attribute and what's missing.
 
-Pass: every acceptance criterion is verifiably implemented AND every quality attribute is addressed. Fail: note exactly which criteria or attributes and what's missing.
+Evaluate whether module boundaries across all slices form a coherent design. Check for: circular dependencies between modules introduced by different slices, public APIs that leak implementation types across module boundaries, and abstractions introduced by one slice that are never reused by others.
+
+Pass: every acceptance criterion is verifiably implemented, every quality attribute is addressed, and module boundaries are coherent. Fail: note exactly which criteria, attributes, or boundary issues and what's missing.
 
 ### Gate 4: Integration Test Coverage and Code Quality
 

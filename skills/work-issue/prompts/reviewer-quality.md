@@ -11,5 +11,7 @@ Check:
 (6) Performance: obvious algorithmic inefficiencies, N+1 query patterns, unnecessary repeated work, resource leaks
 (7) Error handling: are errors from external calls caught and handled; does the code fail safely
 
+(8) Module boundaries: is the public API surface minimal (no internal types or helper functions leaked as public)? Do dependencies flow in one direction (no circular imports between modules)? Are boundaries placed at natural seams (I/O, trust boundaries, domain transitions) rather than arbitrary file splits?
+
 Only flag items with clear impact — do not flag micro-optimizations or stylistic preferences.
 If no ADRs were provided, state this and skip that check.
