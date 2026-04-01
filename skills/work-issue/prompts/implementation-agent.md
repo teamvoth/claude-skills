@@ -29,9 +29,11 @@ Write tests from the issue's Test Scenarios section:
 
 ## Code quality
 
+Before running the checklist below, identify what quality dimensions actually matter for the code you just wrote. Does it handle untrusted input? Is it on a hot path? Does it cross a trust boundary? Is it a rarely-used admin tool? A parser for external data has different quality priorities than a config struct. State which dimensions matter and why in 2-3 sentences, then apply the checklist below with that calibration — spend the most rigor on what matters most.
+
 - Build the project — the code must compile with zero errors. Identify the build command from the project config (`npm run build`, `cargo build`, `go build ./...`, `tsc`, etc.) and run it. Fix any compilation errors before proceeding
-- Run the formatter — code must be clean
-- Run the linter — zero warnings, zero errors
+- Run the formatter — identify it from the project config (`npm run format`, `cargo fmt`, `gofmt`, `prettier`, etc.) and run it. Code must be clean
+- Run the linter — identify it from the project config (`npm run lint`, `cargo clippy`, `golangci-lint`, `eslint`, etc.) and run it. Zero warnings, zero errors
 - Run the full test suite — all tests must pass, not just the ones you wrote
 - Fix anything that flags
 

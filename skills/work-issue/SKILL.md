@@ -2,7 +2,7 @@
 name: work-issue
 description: Autonomously implements the next ready GitHub issue. Picks up the lowest-numbered open issue with all dependencies resolved, reads the PRD and ADRs, scans the codebase, delegates implementation to a sub-agent, reviews the result, and opens a PR. Triggers on "work the next issue", "implement the next issue", "work issue <N>", or any request for autonomous issue execution. Optionally scoped to a feature label.
 argument-hint: "[feature-label]"
-version: 4.3.0
+version: 4.4.0
 allowed-tools: Bash(bash *find-ready-issue.sh*), Bash(gh *), Bash(git *), Bash(cargo *), Read, Agent
 ---
 

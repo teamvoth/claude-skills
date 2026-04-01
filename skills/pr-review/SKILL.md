@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Use this skill when the user asks to "review a PR", "review this pull request", "check the PR", "evaluate the PR", or wants to review and potentially merge an open pull request. Also use when the user wants to verify a PR meets all requirements before merging. Can be invoked with a PR number (e.g. `/pr-review 42`) or without to review the most recent open PR on the current branch.
-version: 3.1.0
+version: 3.2.0
 allowed-tools: Bash(bash *collect-context.sh*), Bash(gh *), Read, Agent
 ---
 
@@ -132,7 +132,7 @@ Evaluate this PR independently for test coverage quality — go beyond the presc
 
 PART A — E2E & Integration Test Coverage:
 (1) Identify every user-facing behavior and external integration introduced or modified in the diff. For each, determine whether an end-to-end or integration test exercises it through the real system boundary (HTTP endpoint, CLI invocation, message queue, database, file system, external API). A unit test that validates internal logic does not satisfy this — the test must prove the feature works as a user or upstream system would interact with it
-(2) Check that e2e/integration tests hit real services and real infrastructure, not mocks or stubs. Tests that mock the database, API client, or service layer at the integration level provide false confidence and are a FAIL
+(2) Check that e2e/integration tests hit real services and real infrastructure by default. Tests that mock the database, API client, or service layer at the integration level provide false confidence and are a FAIL. Exception: contract tests or stubs are acceptable for paid, rate-limited, or destructive external APIs (e.g., payment processors, email senders) — but only when the test includes a comment documenting why a real call is impractical and what contract the stub enforces. Mocking an internal service or database remains a FAIL regardless
 (3) For each acceptance criterion, ask: "If this feature were deployed, would these tests have caught a regression before a user did?" If the answer is no — because the test only checks internal functions, or only checks the happy path, or mocks away the integration point — flag the gap
 (4) Look for missing UAT-style scenarios: user workflows that span multiple steps or components (e.g., create → retrieve → update → verify), error recovery paths a user would encounter (invalid input, service unavailable, partial failure), and boundary conditions at system edges (empty responses from external APIs, timeouts, malformed payloads)
 (5) Any acceptance criterion with no e2e or integration test exercising it through a real system boundary is a FAIL. Any e2e/integration test that mocks away the integration point it claims to test is a FAIL
@@ -167,7 +167,11 @@ Any unmet acceptance criterion is a FAIL. Any out-of-scope change is a FAIL.
 
 Scope instruction:
 ```
-Evaluate this PR exclusively for architectural and code quality issues. Check:
+Evaluate this PR exclusively for architectural and code quality issues.
+
+Before running the checks below, identify what quality dimensions are most relevant for the code in this diff. Is it handling untrusted input (security priority)? Is it on a hot path (performance priority)? Is it a straightforward CRUD operation (pattern compliance priority)? State your calibration in one sentence, then apply the checks with proportionate rigor.
+
+Check:
 (1) ADR compliance: for each ADR provided, verify the implementation follows the decision. Deviations are a FAIL even if the code works — ADRs capture deliberate choices whose reasoning must be preserved
 (2) Existing patterns: does the code follow the conventions visible in the diff context (naming, file organization, error handling style, module structure)
 (3) Code quality: dead code, unused imports, variables declared but never used, unreachable branches
@@ -182,7 +186,9 @@ If no ADRs were provided, state this and skip that check.
 
 Scope instruction:
 ```
-Evaluate this PR exclusively for performance and reliability issues. Check:
+Evaluate this PR exclusively for performance and reliability issues. Focus disproportionately on code paths that actually matter for performance — I/O boundaries, loops over collections, allocation-heavy paths. Do not flag theoretical performance issues in cold paths or admin-only code.
+
+Check:
 (1) Efficiency: obvious algorithmic inefficiencies, N+1 query patterns, unnecessary repeated work, or data fetched but not used
 (2) Error handling: are errors from external calls, I/O, and parsing caught and handled; are error messages useful; does the code fail safely or leave state inconsistent on failure
 (3) Edge cases: what happens with empty collections, null/undefined values, zero, negative numbers, very large inputs, concurrent calls — are these handled or do they produce panics/crashes/incorrect results
