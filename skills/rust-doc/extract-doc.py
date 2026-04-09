@@ -29,6 +29,12 @@ def read_soup(path: Path) -> BeautifulSoup:
 def get_main_content(soup: BeautifulSoup) -> Tag:
     content = soup.find("section", id="main-content")
     if not content:
+        # Fallback: try older rustdoc layout with div#main-content or div.main-heading
+        content = soup.find("div", id="main-content")
+    if not content:
+        # Last resort: use the body tag
+        content = soup.find("body")
+    if not content:
         die("Could not find main-content section in HTML.")
     return content
 
@@ -37,8 +43,17 @@ def get_main_content(soup: BeautifulSoup) -> Tag:
 
 
 def list_crate(doc_root: Path, crate: str) -> None:
-    crate_dir = crate.replace("-", "_")
-    index_path = doc_root / crate_dir / "index.html"
+    # Handle both "crate" and "crate::module::submodule" and "crate/module" forms
+    if "::" in crate:
+        parts = crate.split("::")
+        crate_dir = parts[0].replace("-", "_")
+        index_path = doc_root / crate_dir / "/".join(parts[1:]) / "index.html"
+    elif "/" in crate:
+        crate_dir = crate.replace("-", "_")
+        index_path = doc_root / crate_dir / "index.html"
+    else:
+        crate_dir = crate.replace("-", "_")
+        index_path = doc_root / crate_dir / "index.html"
     soup = read_soup(index_path)
     content = get_main_content(soup)
 
@@ -147,13 +162,24 @@ def lookup_item(doc_root: Path, path: str) -> None:
             return
 
     if not html_path:
+        # Search the crate root for re-exported items before giving up
+        crate_root = doc_root / crate
+        if crate_root.exists() and item_dir != crate_root:
+            for prefix in prefixes:
+                candidate = crate_root / f"{prefix}.{item_name}.html"
+                if candidate.exists():
+                    html_path = candidate
+                    item_type = prefix
+                    break
+
+    if not html_path:
         # List available items in the directory to help
         available = []
         if item_dir.exists():
             for f in sorted(item_dir.iterdir()):
                 if f.suffix == ".html" and "." in f.stem:
-                    parts = f.stem.split(".", 1)
-                    available.append(f"{parts[0]} {parts[1]}")
+                    fparts = f.stem.split(".", 1)
+                    available.append(f"{fparts[0]} {fparts[1]}")
         if available:
             die(
                 f"Item '{item_name}' not found in {item_dir}.\n"

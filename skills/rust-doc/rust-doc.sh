@@ -65,8 +65,22 @@ if [[ "$REMOTE" == true ]]; then
 
   # Determine which page to fetch
   if [[ "$MODE" == "list" ]]; then
-    URL="https://docs.rs/${CRATE_NAME}/latest/${CRATE_NAME_UNDERSCORED}/index.html"
-    CACHE_FILE="$CRATE_DIR/index.html"
+    # Parse submodule path: crate::mod1::mod2 -> mod1/mod2/
+    IFS='::' read -ra LIST_PARTS <<< "$TARGET"
+    LIST_CLEAN=()
+    for p in "${LIST_PARTS[@]}"; do
+      [[ -n "$p" ]] && LIST_CLEAN+=("$p")
+    done
+    MODULE_URL_PATH=""
+    LIST_CACHE_DIR="$CRATE_DIR"
+    for ((i=1; i<${#LIST_CLEAN[@]}; i++)); do
+      MODULE_URL_PATH="${MODULE_URL_PATH}${LIST_CLEAN[$i]}/"
+      LIST_CACHE_DIR="$LIST_CACHE_DIR/${LIST_CLEAN[$i]}"
+    done
+    mkdir -p "$LIST_CACHE_DIR"
+
+    URL="https://docs.rs/${CRATE_NAME}/latest/${CRATE_NAME_UNDERSCORED}/${MODULE_URL_PATH}index.html"
+    CACHE_FILE="$LIST_CACHE_DIR/index.html"
 
     if [[ ! -f "$CACHE_FILE" ]]; then
       HTTP_CODE=$(curl -sL -o "$CACHE_FILE" -w "%{http_code}" "$URL" 2>/dev/null)
@@ -112,6 +126,32 @@ if [[ "$REMOTE" == true ]]; then
         rm -f "$CACHE_FILE"
       fi
     done
+
+    if [[ "$FOUND" != true ]]; then
+      # Try as a module: fetch <item_name>/index.html
+      MODULE_INDEX_URL="https://docs.rs/${CRATE_NAME}/latest/${CRATE_NAME_UNDERSCORED}/${MODULE_PATH}${ITEM_NAME}/index.html"
+      MODULE_INDEX_DIR="$ITEM_DIR/${ITEM_NAME}"
+      MODULE_INDEX_CACHE="$MODULE_INDEX_DIR/index.html"
+      mkdir -p "$MODULE_INDEX_DIR"
+      if [[ ! -f "$MODULE_INDEX_CACHE" ]]; then
+        HTTP_CODE=$(curl -sL -o "$MODULE_INDEX_CACHE" -w "%{http_code}" "$MODULE_INDEX_URL" 2>/dev/null)
+        if [[ "$HTTP_CODE" == "200" ]]; then
+          FOUND=true
+          # It's a module — use list mode on it
+          MODULE_LIST_ARG="${CRATE_NAME_UNDERSCORED}/${MODULE_PATH}${ITEM_NAME}"
+          uv run --with beautifulsoup4 python3 "$EXTRACT_SCRIPT" list "$CACHE_ROOT" "$MODULE_LIST_ARG"
+          exit 0
+        else
+          rm -f "$MODULE_INDEX_CACHE"
+          rmdir "$MODULE_INDEX_DIR" 2>/dev/null || true
+        fi
+      else
+        # Cached module index exists
+        MODULE_LIST_ARG="${CRATE_NAME_UNDERSCORED}/${MODULE_PATH}${ITEM_NAME}"
+        uv run --with beautifulsoup4 python3 "$EXTRACT_SCRIPT" list "$CACHE_ROOT" "$MODULE_LIST_ARG"
+        exit 0
+      fi
+    fi
 
     if [[ "$FOUND" != true ]]; then
       # Try fetching the index to list available items
