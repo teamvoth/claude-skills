@@ -7,6 +7,8 @@ A curated set of Claude Code skills for structured feature development — from 
 | Skill | Purpose |
 |---|---|
 | `/grill-me` | Interview-driven requirements gathering before any work starts |
+| `/grill-with-docs` | Like `/grill-me`, grounded in the project's CONTEXT.md and codebase; persists refined glossary and ADRs |
+| `/ubiquitous-language` | Bootstrap, audit, reconcile, or split the project's domain glossary (CONTEXT.md) outside of feature work |
 | `/create-prd` | Generate a Product Requirements Document, create the feature branch |
 | `/prd-to-issues` | Break a PRD into sequenced GitHub issues, one per acceptance criterion |
 | `/work-issue` | Autonomously implement the next ready issue and open a PR |
